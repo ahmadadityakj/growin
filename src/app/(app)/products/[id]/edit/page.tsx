@@ -3,6 +3,7 @@ import { ProductService } from "@/server/services/product-service";
 import { PageHeader } from "@/components/shared/page-header";
 import { ProductForm } from "../../product-form";
 import { updateProduct } from "../../actions";
+import { KnowledgePanel } from "./knowledge-panel";
 import { t } from "@/lib/i18n";
 
 export default async function EditProductPage({
@@ -11,7 +12,10 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const product = await ProductService.getById(id);
+  const [product, knowledge] = await Promise.all([
+    ProductService.getById(id),
+    ProductService.getKnowledge(id),
+  ]);
   if (!product) notFound();
 
   const bound = updateProduct.bind(null, id);
@@ -37,6 +41,7 @@ export default async function EditProductPage({
         }}
         onSubmit={bound}
       />
+      <KnowledgePanel productId={id} items={knowledge} />
     </div>
   );
 }

@@ -50,6 +50,10 @@ export default async function LeadDetailPage({
             <LeadStatusSelect leadId={lead.id} status={lead.status} />
             <Button
               variant="outline"
+              render={<Link href={`/outreach/generate?lead=${lead.id}`}>Generate Pesan</Link>}
+            />
+            <Button
+              variant="outline"
               render={
                 <Link href={`/leads/${lead.id}/edit`}>
                   <Pencil className="mr-2 h-4 w-4" /> {t.common.edit}
