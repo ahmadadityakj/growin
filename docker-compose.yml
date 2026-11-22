@@ -1,0 +1,18 @@
+# Opsional — PostgreSQL sudah terinstall lokal di mesin ini (PostgreSQL 18, port 5432).
+# File ini disimpan sebagai referensi jika ingin pakai Docker di environment lain.
+services:
+  db:
+    image: postgres:16-alpine
+    profiles: ["docker-db"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: growin
+      POSTGRES_PASSWORD: growin
+      POSTGRES_DB: growin
+    ports:
+      - "5433:5432"
+    volumes:
+      - growin-pgdata:/var/lib/postgresql/data
+
+volumes:
+  growin-pgdata:
