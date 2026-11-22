@@ -13,7 +13,7 @@ import { t } from "@/lib/i18n";
 import { formatDistanceToNow, format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import {
-  LeadStatusSelect, TagPanel, CampaignPanel, ContactsPanel, NoteForm,
+  LeadStatusSelect, TagPanel, CampaignPanel, ContactsPanel, NoteForm, ScoreButton,
 } from "./detail-panels";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
@@ -145,21 +145,28 @@ export default async function LeadDetailPage({
         </div>
 
         <div className="space-y-4">
-          {latestScore && (
-            <Card>
-              <CardHeader><CardTitle className="text-base">Skor Lead</CardTitle></CardHeader>
-              <CardContent className="space-y-2">
-                <div className="text-3xl font-bold">{latestScore.score}<span className="text-base font-normal text-muted-foreground">/100</span></div>
-                <Badge variant="secondary">{latestScore.level}</Badge>
-                {latestScore.reasoning && (
-                  <p className="text-sm text-muted-foreground">{latestScore.reasoning}</p>
-                )}
-                {latestScore.recommendedAction && (
-                  <p className="text-sm"><span className="font-medium">Rekomendasi:</span> {latestScore.recommendedAction}</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Skor Lead</CardTitle>
+              <ScoreButton leadId={lead.id} />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {!latestScore ? (
+                <p className="text-sm text-muted-foreground">Belum dinilai</p>
+              ) : (
+                <>
+                  <div className="text-3xl font-bold">{latestScore.score}<span className="text-base font-normal text-muted-foreground">/100</span></div>
+                  <Badge variant="secondary">{latestScore.level}</Badge>
+                  {latestScore.reasoning && (
+                    <p className="text-sm text-muted-foreground">{latestScore.reasoning}</p>
+                  )}
+                  {latestScore.recommendedAction && (
+                    <p className="text-sm"><span className="font-medium">Rekomendasi:</span> {latestScore.recommendedAction}</p>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
 
           <TagPanel leadId={lead.id} leadTags={lead.tags} allTags={allTags} />
           <CampaignPanel

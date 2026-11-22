@@ -19,6 +19,7 @@ import {
   addLeadToCampaign, removeLeadFromCampaign, addLeadNote,
   addLeadContact, deleteLeadContact,
 } from "../actions";
+import { scoreLead } from "../../research/actions";
 import type { LeadStatus } from "@/server/services/lead-service";
 
 function useRefresh() {
@@ -245,6 +246,18 @@ export function ContactsPanel({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+export function ScoreButton({ leadId }: { leadId: string }) {
+  const { pending, run } = useRefresh();
+  return (
+    <Button
+      size="sm" variant="outline" disabled={pending}
+      onClick={() => run(() => scoreLead(leadId))}
+    >
+      {pending ? "Menilai..." : "Nilai dengan AI"}
+    </Button>
   );
 }
 
