@@ -63,6 +63,11 @@ export const en: Dictionary = {
     recentActivities: "Recent Activities",
     campaignPerformance: "Campaign Performance",
     aiRecommendations: "AI Recommendations",
+    greetingMorning: "Good morning",
+    greetingAfternoon: "Good afternoon",
+    greetingEvening: "Good evening",
+    greetingNight: "Good night",
+    greetingSubtitle: "Here's your business growth summary for today.",
   },
   products: {
     title: "Products",

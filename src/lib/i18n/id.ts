@@ -61,6 +61,11 @@ export const id = {
     recentActivities: "Aktivitas Terakhir",
     campaignPerformance: "Performa Kampanye",
     aiRecommendations: "Rekomendasi AI",
+    greetingMorning: "Selamat pagi",
+    greetingAfternoon: "Selamat siang",
+    greetingEvening: "Selamat sore",
+    greetingNight: "Selamat malam",
+    greetingSubtitle: "Berikut ringkasan pertumbuhan bisnis Anda hari ini.",
   },
   products: {
     title: "Produk",
