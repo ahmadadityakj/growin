@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Users, Upload, Download } from "lucide-react";
+import { Plus, Users, Upload, Download, UserCheck } from "lucide-react";
 import { LeadService } from "@/server/services/lead-service";
 import { CampaignService } from "@/server/services/campaign-service";
 import { PageHeader } from "@/components/shared/page-header";
@@ -65,6 +65,14 @@ export default async function LeadsPage({
               render={
                 <Link href="/leads/import">
                   <Upload className="mr-2 h-4 w-4" /> {t.common.import}
+                </Link>
+              }
+            />
+            <Button
+              variant="outline"
+              render={
+                <Link href="/leads/enrichment">
+                  <UserCheck className="mr-2 h-4 w-4" /> Enrichment Kontak
                 </Link>
               }
             />

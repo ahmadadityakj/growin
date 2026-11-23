@@ -104,6 +104,45 @@ export async function deleteLeadContact(contactId: string, leadId: string) {
   revalidatePath(`/leads/${leadId}`);
 }
 
+export async function enrichLeadContact(
+  leadId: string,
+  data: {
+    contactPerson?: string | null;
+    whatsappNumber?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    verified: boolean;
+  }
+) {
+  const session = await requireAuth();
+  const { db } = await import("@/server/db");
+  const { leads, leadActivities } = await import("@/server/db/schema");
+  const { eq } = await import("drizzle-orm");
+
+  await db
+    .update(leads)
+    .set({
+      contactPerson: data.contactPerson || undefined,
+      whatsappNumber: data.whatsappNumber || undefined,
+      email: data.email || undefined,
+      phone: data.phone || undefined,
+      contactVerified: data.verified,
+      contactVerifiedAt: data.verified ? new Date() : null,
+      updatedAt: new Date(),
+    })
+    .where(eq(leads.id, leadId));
+
+  await db.insert(leadActivities).values({
+    leadId,
+    type: "note",
+    description: `Kontak diperbarui via enrichment${data.verified ? " (verified)" : ""}`,
+    userId: session.user.id,
+  });
+
+  revalidatePath("/leads/enrichment");
+  revalidatePath("/leads");
+}
+
 export async function importLeadsCsv(csvText: string) {
   const session = await requireAuth();
   const parsed = Papa.parse<Record<string, string>>(csvText, {

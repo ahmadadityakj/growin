@@ -65,6 +65,8 @@ export const leads = pgTable(
     status: leadStatusEnum("status").notNull().default("new"),
     score: integer("score"),
     assignedUserId: uuid("assigned_user_id").references(() => users.id),
+    contactVerified: boolean("contact_verified").notNull().default(false),
+    contactVerifiedAt: timestamp("contact_verified_at", { mode: "date" }),
     lastContactedAt: timestamp("last_contacted_at", { mode: "date" }),
     nextFollowUpAt: timestamp("next_follow_up_at", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
