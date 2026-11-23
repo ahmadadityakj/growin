@@ -1,7 +1,7 @@
-import { count, desc, eq, isNull, sql } from "drizzle-orm";
+import { count, desc, eq, isNull, sql, sum } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
-  leads, campaigns, campaignLeads, outreachMessages, messageReplies,
+  leads, campaigns, campaignLeads, outreachMessages, messageReplies, aiGenerations,
 } from "@/server/db/schema";
 
 export class AnalyticsService {
@@ -71,5 +71,28 @@ export class AnalyticsService {
       order by 1
     `);
     return rows as unknown as { month: string; count: number }[];
+  }
+
+  /** Pemakaian AI per jenis operasi (call count + token). */
+  static async aiUsage() {
+    const rows = await db
+      .select({
+        type: aiGenerations.type,
+        calls: count(),
+        tokensIn: sum(aiGenerations.tokensIn).mapWith(Number),
+        tokensOut: sum(aiGenerations.tokensOut).mapWith(Number),
+      })
+      .from(aiGenerations)
+      .groupBy(aiGenerations.type)
+      .orderBy(desc(count()));
+    const totals = rows.reduce(
+      (acc, r) => ({
+        calls: acc.calls + r.calls,
+        tokensIn: acc.tokensIn + (r.tokensIn || 0),
+        tokensOut: acc.tokensOut + (r.tokensOut || 0),
+      }),
+      { calls: 0, tokensIn: 0, tokensOut: 0 }
+    );
+    return { rows, totals };
   }
 }

@@ -1,6 +1,7 @@
 import { AnalyticsService } from "@/server/services/analytics-service";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReportsCharts } from "./reports-charts";
 import { t } from "@/lib/i18n";
 
@@ -18,6 +19,14 @@ const STATUS_LABELS: Record<string, string> = {
   invalid: "Invalid",
 };
 
+const AI_TYPE_LABELS: Record<string, string> = {
+  message: "Generate pesan",
+  task_parse: "Parse instruksi task",
+  research_extract: "Ekstraksi riset",
+  lead_score: "Scoring lead",
+  summary: "Ringkasan",
+};
+
 const MSG_LABELS: Record<string, string> = {
   draft: "Draft",
   pending_approval: "Menunggu approval",
@@ -33,12 +42,13 @@ const MSG_LABELS: Record<string, string> = {
 };
 
 export default async function ReportsPage() {
-  const [kpi, byStatus, byCampaign, outreach, perMonth] = await Promise.all([
+  const [kpi, byStatus, byCampaign, outreach, perMonth, aiUsage] = await Promise.all([
     AnalyticsService.kpi(),
     AnalyticsService.leadsByStatus(),
     AnalyticsService.leadsByCampaign(),
     AnalyticsService.outreachByStatus(),
     AnalyticsService.leadsPerMonth(),
+    AnalyticsService.aiUsage(),
   ]);
 
   const statusData = byStatus.map((r: { status: string; count: number }) => ({
@@ -86,6 +96,60 @@ export default async function ReportsPage() {
         msgStatusData={msgStatusData}
         monthData={perMonth}
       />
+
+      {/* Pemakaian AI */}
+      <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Pemakaian AI</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Semua request OpenAI dari aplikasi ini — token dicatat per call. Biaya akuratnya cek dashboard OpenAI.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {aiUsage.rows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Belum ada pemakaian AI.</p>
+            ) : (
+              <>
+                <div className="mb-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Total Request</div>
+                    <div className="text-xl font-bold">{aiUsage.totals.calls}</div>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Token Input</div>
+                    <div className="text-xl font-bold">{aiUsage.totals.tokensIn.toLocaleString("id-ID")}</div>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Token Output</div>
+                    <div className="text-xl font-bold">{aiUsage.totals.tokensOut.toLocaleString("id-ID")}</div>
+                  </div>
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs text-muted-foreground">
+                      <th className="pb-2 font-medium">Operasi</th>
+                      <th className="pb-2 text-right font-medium">Request</th>
+                      <th className="pb-2 text-right font-medium">Token In</th>
+                      <th className="pb-2 text-right font-medium">Token Out</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {aiUsage.rows.map((r) => (
+                      <tr key={r.type} className="border-b last:border-0">
+                        <td className="py-2">{AI_TYPE_LABELS[r.type] ?? r.type}</td>
+                        <td className="py-2 text-right">{r.calls}</td>
+                        <td className="py-2 text-right">{(r.tokensIn || 0).toLocaleString("id-ID")}</td>
+                        <td className="py-2 text-right">{(r.tokensOut || 0).toLocaleString("id-ID")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
