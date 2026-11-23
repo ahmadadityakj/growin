@@ -1,4 +1,18 @@
 import type { SearchProvider, SearchResultItem } from "./types";
+import { db } from "@/server/db";
+import { integrationLogs } from "@/server/db/schema";
+
+async function logSearch(status: string, detail: string) {
+  try {
+    await db.insert(integrationLogs).values({
+      event: "search:brave",
+      status,
+      detail: detail.slice(0, 500),
+    });
+  } catch {
+    // jangan ganggu flow utama kalau logging gagal
+  }
+}
 
 export class BraveSearchProvider implements SearchProvider {
   name = "brave";
@@ -19,7 +33,12 @@ export class BraveSearchProvider implements SearchProvider {
         "X-Subscription-Token": this.apiKey,
       },
     });
-    if (!res.ok) throw new Error(`Brave search error: ${res.status} ${await res.text()}`);
+    if (!res.ok) {
+      const err = `Brave search error: ${res.status} ${await res.text()}`;
+      await logSearch("error", `${query} — ${err}`);
+      throw new Error(err);
+    }
+    await logSearch("success", query);
 
     const data = await res.json();
     const results = data?.web?.results ?? [];

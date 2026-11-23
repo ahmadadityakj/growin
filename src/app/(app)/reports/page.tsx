@@ -42,13 +42,14 @@ const MSG_LABELS: Record<string, string> = {
 };
 
 export default async function ReportsPage() {
-  const [kpi, byStatus, byCampaign, outreach, perMonth, aiUsage] = await Promise.all([
+  const [kpi, byStatus, byCampaign, outreach, perMonth, aiUsage, searchUsage] = await Promise.all([
     AnalyticsService.kpi(),
     AnalyticsService.leadsByStatus(),
     AnalyticsService.leadsByCampaign(),
     AnalyticsService.outreachByStatus(),
     AnalyticsService.leadsPerMonth(),
     AnalyticsService.aiUsage(),
+    AnalyticsService.searchUsage(),
   ]);
 
   const statusData = byStatus.map((r: { status: string; count: number }) => ({
@@ -146,6 +147,24 @@ export default async function ReportsPage() {
                   </tbody>
                 </table>
               </>
+            )}
+
+            {searchUsage.length > 0 && (
+              <div className="mt-5 border-t pt-4">
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Request Search API
+                </div>
+                <table className="w-full text-sm">
+                  <tbody>
+                    {searchUsage.map((r) => (
+                      <tr key={`${r.event}-${r.status}`} className="border-b last:border-0">
+                        <td className="py-2">{r.event.replace("search:", "").replace(/^./, (c) => c.toUpperCase())}</td>
+                        <td className="py-2 text-right">{r.calls}× {r.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>

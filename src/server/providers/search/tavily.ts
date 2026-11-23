@@ -1,4 +1,18 @@
 import type { SearchProvider, SearchResultItem } from "./types";
+import { db } from "@/server/db";
+import { integrationLogs } from "@/server/db/schema";
+
+async function logSearch(status: string, detail: string) {
+  try {
+    await db.insert(integrationLogs).values({
+      event: "search:tavily",
+      status,
+      detail: detail.slice(0, 500),
+    });
+  } catch {
+    // jangan ganggu flow utama kalau logging gagal
+  }
+}
 
 export class TavilySearchProvider implements SearchProvider {
   name = "tavily";
@@ -16,7 +30,12 @@ export class TavilySearchProvider implements SearchProvider {
         search_depth: "basic",
       }),
     });
-    if (!res.ok) throw new Error(`Tavily search error: ${res.status} ${await res.text()}`);
+    if (!res.ok) {
+      const err = `Tavily search error: ${res.status} ${await res.text()}`;
+      await logSearch("error", `${query} — ${err}`);
+      throw new Error(err);
+    }
+    await logSearch("success", query);
 
     const data = await res.json();
     const results = data?.results ?? [];

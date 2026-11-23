@@ -1,7 +1,7 @@
 import { count, desc, eq, isNull, sql, sum } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
-  leads, campaigns, campaignLeads, outreachMessages, messageReplies, aiGenerations,
+  leads, campaigns, campaignLeads, outreachMessages, messageReplies, aiGenerations, integrationLogs,
 } from "@/server/db/schema";
 
 export class AnalyticsService {
@@ -94,5 +94,19 @@ export class AnalyticsService {
       { calls: 0, tokensIn: 0, tokensOut: 0 }
     );
     return { rows, totals };
+  }
+
+  /** Jumlah request ke search API (tavily/brave) dari integration_logs. */
+  static async searchUsage() {
+    return db
+      .select({
+        event: integrationLogs.event,
+        status: integrationLogs.status,
+        calls: count(),
+      })
+      .from(integrationLogs)
+      .where(sql`${integrationLogs.event} like 'search:%'`)
+      .groupBy(integrationLogs.event, integrationLogs.status)
+      .orderBy(desc(count()));
   }
 }
