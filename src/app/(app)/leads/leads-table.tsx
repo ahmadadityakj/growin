@@ -10,8 +10,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -76,18 +76,19 @@ export function LeadsTable({
               }
             />
             <DropdownMenuContent>
-              <DropdownMenuLabel>Status baru</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {LEAD_STATUSES.map((s) => (
-                <DropdownMenuItem
-                  key={s}
-                  onClick={() =>
-                    runBulk(() => bulkUpdateLeadStatus(ids, s as LeadStatus))
-                  }
-                >
-                  {t.leads.statuses[s]}
-                </DropdownMenuItem>
-              ))}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Status baru</DropdownMenuLabel>
+                {LEAD_STATUSES.map((s) => (
+                  <DropdownMenuItem
+                    key={s}
+                    onClick={() =>
+                      runBulk(() => bulkUpdateLeadStatus(ids, s as LeadStatus))
+                    }
+                  >
+                    {t.leads.statuses[s]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
 
