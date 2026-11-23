@@ -42,8 +42,12 @@ async function main() {
   await boss.work(QUEUES.followupTick, async () => {
     const { FollowUpService } = await import("../services/followup-service");
     console.log("[worker] followup.tick");
-    await FollowUpService.tick();
+    const r = await FollowUpService.tick();
+    console.log(`[worker] followup.tick done:`, r);
   });
+
+  // jalankan follow-up tick tiap 15 menit
+  await boss.schedule(QUEUES.followupTick, "*/15 * * * *");
 
   console.log("[worker] Growin worker started, listening for jobs...");
 }

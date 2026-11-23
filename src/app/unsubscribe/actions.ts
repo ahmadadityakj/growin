@@ -3,6 +3,7 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "@/server/db";
 import { unsubscribeRecords, leads, followupSchedules } from "@/server/db/schema";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function unsubscribe(input: {
   identifier: string;
@@ -11,6 +12,9 @@ export async function unsubscribe(input: {
 }) {
   const identifier = input.identifier.trim();
   if (!identifier) throw new Error("Identifier kosong");
+  if (!rateLimit(`unsub:${identifier}`, 5, 60 * 60 * 1000)) {
+    throw new Error("Terlalu banyak percobaan. Coba lagi nanti.");
+  }
 
   // cari lead terkait
   const field = input.channel === "email" ? leads.email : leads.whatsappNumber;
