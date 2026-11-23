@@ -88,16 +88,25 @@ function buildQueries(job: {
   const queries: string[] = [];
 
   if (industry && location) {
+    // ronde 1 — query langsung
     queries.push(`${industry} di ${location}`);
     queries.push(`daftar ${industry} ${location}`);
     queries.push(`${industry} ${location} kontak email telepon`);
     queries.push(`${industry} ${location} site:*.id OR site:*.com OR site:*.sch.id`);
+    // ronde 2 — variasi phrasing
+    queries.push(`"${industry}" "${location}" alamat`);
+    queries.push(`data ${industry} ${location}`);
+    queries.push(`${industry} terbaik ${location}`);
+    // ronde 3 — direktori & alternatif
+    queries.push(`list of ${industry} in ${location}`);
+    queries.push(`${industry} ${location} profil website`);
+    queries.push(`yayasan ${industry} ${location}`);
   } else {
     queries.push(job.instruction);
   }
   // pastikan instruksi asli selalu ikut
   if (!queries.includes(job.instruction)) queries.push(job.instruction);
-  return [...new Set(queries)].slice(0, 6);
+  return [...new Set(queries)];
 }
 
 function computeQualityScore(r: {
@@ -157,53 +166,64 @@ export class ResearchService {
       await db.update(researchJobs).set({ provider: provider.name }).where(eq(researchJobs.id, jobId));
 
       const queries = buildQueries(job);
+      const target = job.targetQuantity ?? 50;
       const urlMap = new Map<string, { title: string; snippet: string }>();
-
-      for (const q of queries) {
-        try {
-          const results = await provider.search(q, { count: 15, country: "id" });
-          for (const r of results) {
-            if (!urlMap.has(r.url) && !SKIP_DOMAINS.some((d) => r.url.includes(d))) {
-              urlMap.set(r.url, { title: r.title, snippet: r.snippet });
-            }
-          }
-        } catch {
-          // query gagal tidak menghentikan job
-        }
-      }
-
-      const candidates = [...urlMap.entries()].slice(
-        0,
-        Math.max(30, Math.min(80, (job.targetQuantity ?? 50) * 2))
-      );
-
-      const useAI = hasOpenAI();
       const extracted: { url: string; data: Extracted | null }[] = [];
+      const processedUrls = new Set<string>();
+      const useAI = hasOpenAI();
 
-      // proses paralel batch 5
-      for (let i = 0; i < candidates.length; i += 5) {
-        const batch = candidates.slice(i, i + 5);
-        const settled = await Promise.allSettled(
-          batch.map(async ([url, meta]) => {
-            if (!useAI) {
-              // tanpa OpenAI: simpan kandidat mentah dari hasil search
-              return {
-                url,
-                data: {
-                  isRelevant: true,
-                  businessName: meta.title.replace(/\s*[-|–—].*$/, "").trim() || url,
-                  notes: meta.snippet,
-                } as Extracted,
-              };
+      // multi-round: ronde query 4-per-4, berhenti kalau target tercapai
+      // atau query habis. Maks 3 ronde untuk jaga credits search API.
+      const ROUND_SIZE = 4;
+      const MAX_ROUNDS = 3;
+      const PER_ROUND_CAP = Math.max(25, target);
+
+      for (let round = 0; round < MAX_ROUNDS && extracted.length < target; round++) {
+        const roundQueries = queries.slice(round * ROUND_SIZE, (round + 1) * ROUND_SIZE);
+        if (!roundQueries.length) break;
+
+        for (const q of roundQueries) {
+          try {
+            const results = await provider.search(q, { count: 15, country: "id" });
+            for (const r of results) {
+              if (!urlMap.has(r.url) && !SKIP_DOMAINS.some((d) => r.url.includes(d))) {
+                urlMap.set(r.url, { title: r.title, snippet: r.snippet });
+              }
             }
-            const pageText = await fetchPageText(url);
-            const data = await this.extractLead(url, pageText ?? meta.snippet, job);
-            return { url, data };
-          })
-        );
-        for (const s of settled) {
-          if (s.status === "fulfilled" && s.value.data?.isRelevant && s.value.data.businessName) {
-            extracted.push(s.value);
+          } catch {
+            // query gagal tidak menghentikan job
+          }
+        }
+
+        // proses kandidat baru dari ronde ini saja (belum diekstrak)
+        const newCandidates = [...urlMap.entries()]
+          .filter(([url]) => !processedUrls.has(url))
+          .slice(0, PER_ROUND_CAP);
+        for (const [url] of newCandidates) processedUrls.add(url);
+
+        for (let i = 0; i < newCandidates.length && extracted.length < target; i += 5) {
+          const batch = newCandidates.slice(i, i + 5);
+          const settled = await Promise.allSettled(
+            batch.map(async ([url, meta]) => {
+              if (!useAI) {
+                return {
+                  url,
+                  data: {
+                    isRelevant: true,
+                    businessName: meta.title.replace(/\s*[-|–—].*$/, "").trim() || url,
+                    notes: meta.snippet,
+                  } as Extracted,
+                };
+              }
+              const pageText = await fetchPageText(url);
+              const data = await this.extractLead(url, pageText ?? meta.snippet, job);
+              return { url, data };
+            })
+          );
+          for (const s of settled) {
+            if (s.status === "fulfilled" && s.value.data?.isRelevant && s.value.data.businessName) {
+              extracted.push(s.value);
+            }
           }
         }
       }
