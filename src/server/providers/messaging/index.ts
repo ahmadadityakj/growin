@@ -10,19 +10,26 @@ export interface MessagingProvider {
   send(input: { recipient: string; subject?: string; body: string }): Promise<SendResult>;
 }
 
-/** Pilih messaging provider per channel — credential dari env dulu, integrasi DB menyusul. */
+/** Pilih messaging provider per channel — credential dari integrations table dulu, fallback env. */
 export async function getMessagingProvider(channel: "email" | "whatsapp"): Promise<MessagingProvider> {
+  const { IntegrationService } = await import("../../services/integration-service");
+
   if (channel === "email") {
     const { ResendProvider } = await import("./resend");
-    if (!env.RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY belum diset di .env / Integrations");
+    const creds = await IntegrationService.getCredentials("resend");
+    const apiKey = creds.apiKey || env.RESEND_API_KEY;
+    const from = creds.fromEmail || env.RESEND_FROM_EMAIL || "Growin <onboarding@resend.dev>";
+    if (!apiKey) {
+      throw new Error("Resend API key belum diset — isi di Integrations atau RESEND_API_KEY di .env");
     }
-    return new ResendProvider(env.RESEND_API_KEY, env.RESEND_FROM_EMAIL ?? "Growin <onboarding@resend.dev>");
+    return new ResendProvider(apiKey, from);
   }
 
   const { FonnteProvider } = await import("./fonnte");
-  if (!env.FONNTE_TOKEN) {
-    throw new Error("FONNTE_TOKEN belum diset di .env / Integrations");
+  const creds = await IntegrationService.getCredentials("fonnte");
+  const token = creds.token || env.FONNTE_TOKEN;
+  if (!token) {
+    throw new Error("Fonnte token belum diset — isi di Integrations atau FONNTE_TOKEN di .env");
   }
-  return new FonnteProvider(env.FONNTE_TOKEN);
+  return new FonnteProvider(token);
 }
