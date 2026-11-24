@@ -390,6 +390,30 @@ ${pageText.slice(0, 6000)}
 
     const job = await this.getJob(result.jobId);
 
+    // cek duplikat ulang saat approve — bisnis yang sama bisa ketemu
+    // di job lain dan keduanya di-approve
+    const dup = result.duplicateOfLeadId
+      ? await db.query.leads.findFirst({ where: eq(leads.id, result.duplicateOfLeadId) })
+      : await this.findLeadDuplicate({
+          email: result.email,
+          phone: result.phone,
+          businessName: result.businessName,
+          city: result.city,
+        });
+
+    if (dup) {
+      // link result ke lead yang sudah ada, jangan buat lead baru
+      await db
+        .update(researchResults)
+        .set({ reviewStatus: "approved", leadId: dup.id, duplicateOfLeadId: dup.id })
+        .where(eq(researchResults.id, resultId));
+      await db
+        .update(researchJobs)
+        .set({ approvedCount: sql`${researchJobs.approvedCount} + 1` })
+        .where(eq(researchJobs.id, result.jobId));
+      return dup;
+    }
+
     const [lead] = await db
       .insert(leads)
       .values({
