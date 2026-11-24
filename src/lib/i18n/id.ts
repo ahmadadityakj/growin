@@ -10,6 +10,7 @@ export const id = {
     campaigns: "Kampanye",
     research: "Riset Pasar",
     leads: "Leads",
+    pipeline: "Pipeline",
     outreach: "Outreach",
     followUps: "Follow-up",
     reports: "Laporan",

@@ -32,6 +32,8 @@ export const leadInputSchema = z.object({
   researchNotes: z.string().optional().nullable(),
   status: z.enum(LEAD_STATUS_VALUES).default("new"),
   score: z.coerce.number().int().min(0).max(100).optional().nullable(),
+  dealValue: z.coerce.number().int().min(0).optional().nullable(),
+  lostReason: z.string().optional().nullable(),
   assignedUserId: z.string().uuid().optional().nullable(),
   nextFollowUpAt: z.string().optional().nullable(),
 });

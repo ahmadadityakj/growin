@@ -48,6 +48,8 @@ export function LeadForm({
       researchNotes: g("researchNotes"),
       status: status as LeadInput["status"],
       score: fd.get("score") ? Number(fd.get("score")) : null,
+      dealValue: fd.get("dealValue") ? Number(fd.get("dealValue")) : null,
+      lostReason: g("lostReason"),
       nextFollowUpAt: g("nextFollowUpAt"),
     };
     startTransition(async () => {
@@ -132,6 +134,16 @@ export function LeadForm({
             <Label htmlFor="score">Skor (0-100)</Label>
             <Input id="score" name="score" type="number" min={0} max={100} defaultValue={lead?.score ?? ""} />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="dealValue">Nilai Deal (Rp/bulan)</Label>
+            <Input id="dealValue" name="dealValue" type="number" min={0} placeholder="mis. 3000000" defaultValue={lead?.dealValue ?? ""} />
+          </div>
+          {status === "not_interested" && (
+            <div className="space-y-2">
+              <Label htmlFor="lostReason">Alasan Lost</Label>
+              <Input id="lostReason" name="lostReason" placeholder="mis. terlalu mahal" defaultValue={f("lostReason")} />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="nextFollowUpAt">Follow-up Berikutnya</Label>
             <Input id="nextFollowUpAt" name="nextFollowUpAt" type="date" defaultValue={f("nextFollowUpAt").slice(0, 10)} />

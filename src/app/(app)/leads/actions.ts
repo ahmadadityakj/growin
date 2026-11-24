@@ -27,6 +27,15 @@ export async function updateLead(id: string, input: LeadInput) {
   redirect(`/leads/${id}`);
 }
 
+export async function updateLeadDealValue(id: string, dealValue: number | null) {
+  const session = await requireAuth();
+  const { db } = await import("@/server/db");
+  const { leads } = await import("@/server/db/schema");
+  const { eq } = await import("drizzle-orm");
+  await db.update(leads).set({ dealValue, updatedAt: new Date() }).where(eq(leads.id, id));
+  revalidatePath("/pipeline");
+}
+
 export async function updateLeadStatus(id: string, status: LeadStatus) {
   const session = await requireAuth();
   await LeadService.updateStatus(id, status, session.user.id);

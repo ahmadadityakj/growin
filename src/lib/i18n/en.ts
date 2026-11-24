@@ -12,6 +12,7 @@ export const en: Dictionary = {
     campaigns: "Campaigns",
     research: "Market Research",
     leads: "Leads",
+    pipeline: "Pipeline",
     outreach: "Outreach",
     followUps: "Follow-ups",
     reports: "Reports",
