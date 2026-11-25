@@ -2,15 +2,10 @@ import { desc, isNull } from "drizzle-orm";
 import { db } from "@/server/db";
 import { leads } from "@/server/db/schema";
 import { PageHeader } from "@/components/shared/page-header";
-import { PipelineBoard, STAGES, type PipelineLead } from "./kanban";
+import { PipelineBoard, type PipelineLead } from "./kanban";
+import { STAGES, stageOf, fmtRp } from "./stages";
 
 export const metadata = { title: "Pipeline | Growin" };
-
-function fmtRp(n: number): string {
-  if (n >= 1_000_000) return `Rp ${(n / 1_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })}jt`;
-  if (n >= 1_000) return `Rp ${(n / 1_000).toLocaleString("id-ID", { maximumFractionDigits: 0 })}rb`;
-  return `Rp ${n.toLocaleString("id-ID")}`;
-}
 
 export default async function PipelinePage() {
   const rows = await db
@@ -23,7 +18,7 @@ export default async function PipelinePage() {
   const byStage = new Map<string, PipelineLead[]>();
   for (const s of STAGES) byStage.set(s.id, []);
   for (const l of rows) {
-    const stage = STAGES.find((s) => s.statuses.includes(l.status)) ?? STAGES[0];
+    const stage = stageOf(l.status);
     byStage.get(stage.id)!.push(l);
   }
 
