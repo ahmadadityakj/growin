@@ -7,3 +7,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## UI work
+
+For any UI or visual work, first read `DESIGN.md` for the project's design
+direction (identity, palette, typography, imagery). Then apply the antislop
+skills in `.devin/skills/` as the filter: `antislop` (core) always, plus
+`antislop-ui`, `antislop-copywriting`, `antislop-human`,
+`antislop-layoutmobile`, or `antislop-code` when the task touches those areas.
