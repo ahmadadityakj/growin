@@ -99,7 +99,7 @@ async function getLiveStats() {
 export default async function LandingPage() {
   const [session, stats] = await Promise.all([auth(), getLiveStats()]);
   const loggedIn = !!session?.user;
-  const ctaHref = loggedIn ? "/dashboard" : "/login";
+  const ctaHref = loggedIn ? "/dashboard" : "/signup";
   const ctaLabel = loggedIn ? "Buka Dashboard" : "Coba Gratis";
   const showStats = stats.leads + stats.sent + stats.results > 0;
 
