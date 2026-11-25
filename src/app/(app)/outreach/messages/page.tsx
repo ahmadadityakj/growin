@@ -58,7 +58,7 @@ export default async function MessagesPage({
   return (
     <div>
       <PageHeader
-        title="Outreach — Pesan"
+        title="Outreach · Pesan"
         description={`${pendingCount[0].c} pesan menunggu approval`}
         actions={<QueueButton />}
       />

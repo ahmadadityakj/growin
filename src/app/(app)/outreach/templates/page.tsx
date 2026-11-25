@@ -20,7 +20,7 @@ export default async function TemplatesPage() {
   return (
     <div>
       <PageHeader
-        title="Outreach — Templates"
+        title="Outreach · Templates"
         actions={<TemplateDialog products={products.map((p) => ({ id: p.id, name: p.name }))} />}
       />
       <OutreachNav />

@@ -24,7 +24,7 @@ export default async function GeneratePage({
       <GeneratorForm
         leads={leads.rows.map((l) => ({
           id: l.id,
-          label: `${l.businessName}${l.city ? ` — ${l.city}` : ""}`,
+          label: `${l.businessName}${l.city ? ` · ${l.city}` : ""}`,
           hasEmail: Boolean(l.email),
           hasWa: Boolean(l.whatsappNumber ?? l.phone),
         }))}

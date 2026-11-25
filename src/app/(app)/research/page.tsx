@@ -27,7 +27,7 @@ export default async function ResearchPage() {
     <div>
       <PageHeader
         title={t.nav.research}
-        description="Riset pasar otomatis dengan AI — cari bisnis potensial dari sumber publik"
+        description="Riset pasar otomatis dengan AI: cari bisnis potensial dari sumber publik"
         actions={
           <Button
             render={

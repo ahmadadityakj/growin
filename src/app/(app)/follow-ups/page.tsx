@@ -46,7 +46,7 @@ export default async function FollowUpsPage() {
     <div>
       <PageHeader
         title={t.nav.followUps}
-        description="Sequence follow-up otomatis — berhenti saat lead membalas atau opt-out."
+        description="Sequence follow-up otomatis: berhenti saat lead membalas atau opt-out."
       />
 
       <div className="mb-6 grid gap-4 lg:grid-cols-2">
@@ -69,7 +69,7 @@ export default async function FollowUpsPage() {
                 {seq.steps.map((s) => (
                   <li key={s.id}>
                     Hari +{s.delayDays}
-                    {s.instruction ? ` — ${s.instruction.slice(0, 60)}` : " — pakai template"}
+                    {s.instruction ? ` · ${s.instruction.slice(0, 60)}` : " · pakai template"}
                   </li>
                 ))}
               </ol>

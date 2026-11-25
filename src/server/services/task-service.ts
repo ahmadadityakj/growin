@@ -111,7 +111,7 @@ export class TaskService {
     return task;
   }
 
-  /** Eksekusi task — dipanggil worker. */
+  /** Eksekusi task; dipanggil worker. */
   static async execute(taskId: string) {
     const task = await db.query.aiTasks.findFirst({ where: eq(aiTasks.id, taskId) });
     if (!task) return;

@@ -1,5 +1,5 @@
 /**
- * Ilustrasi hero untuk halaman login — scene abstrak pertumbuhan marketing:
+ * Ilustrasi hero untuk halaman login: scene abstrak pertumbuhan marketing:
  * grafik naik, chat bubbles, roket, sparkles. Warna translucent putih
  * supaya cocok di atas panel gradient emerald.
  */

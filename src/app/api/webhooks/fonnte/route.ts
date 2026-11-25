@@ -9,7 +9,7 @@ import { OutreachService } from "@/server/services/outreach-service";
 import { normalizeWaNumber } from "@/server/providers/messaging/fonnte";
 
 /**
- * Fonnte webhook — 2 jenis callback:
+ * Fonnte webhook: 2 jenis callback:
  * 1. Status update: {id, status} → update delivery status pesan
  * 2. Incoming message: {sender, message, ...} → reply tracking
  *

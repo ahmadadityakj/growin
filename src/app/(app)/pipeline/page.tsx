@@ -4,7 +4,7 @@ import { leads } from "@/server/db/schema";
 import { PageHeader } from "@/components/shared/page-header";
 import { PipelineBoard, STAGES, type PipelineLead } from "./kanban";
 
-export const metadata = { title: "Pipeline — Growin" };
+export const metadata = { title: "Pipeline | Growin" };
 
 function fmtRp(n: number): string {
   if (n >= 1_000_000) return `Rp ${(n / 1_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })}jt`;
@@ -47,7 +47,7 @@ export default async function PipelinePage() {
     <div>
       <PageHeader
         title="Pipeline"
-        description="Drag kartu antar tahap. Nilai deal = estimasi Rp/bulan per lead — isi di kartu atau halaman lead."
+        description="Drag kartu antar tahap. Nilai deal = estimasi Rp/bulan per lead, isi di kartu atau halaman lead."
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">

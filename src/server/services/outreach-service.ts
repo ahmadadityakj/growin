@@ -106,7 +106,7 @@ export class OutreachService {
     return queued;
   }
 
-  /** Kirim satu pesan — dipanggil worker. */
+  /** Kirim satu pesan; dipanggil worker. */
   static async sendMessage(messageId: string): Promise<void> {
     const msg = await db.query.outreachMessages.findFirst({
       where: eq(outreachMessages.id, messageId),

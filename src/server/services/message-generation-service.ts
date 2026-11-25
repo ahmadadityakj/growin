@@ -57,7 +57,7 @@ export class MessageGenerationService {
     const isEmail = data.channel === "email";
     const lang = data.language === "id" ? "Bahasa Indonesia" : "English";
 
-    const prompt = `Kamu copywriter B2B untuk produk SaaS. Buat ${data.variations} variasi pesan ${isEmail ? "email" : "WhatsApp"} yang PERSONAL dan natural — bukan template massal.
+    const prompt = `Kamu copywriter B2B untuk produk SaaS. Buat ${data.variations} variasi pesan ${isEmail ? "email" : "WhatsApp"} yang PERSONAL dan natural, bukan template massal.
 
 PRODUK:
 Nama: ${product.name}
@@ -73,7 +73,7 @@ Kontak: ${lead.contactPerson ?? "-"}
 Industri: ${lead.industry ?? "-"}
 Tipe bisnis: ${lead.businessType ?? "-"}
 Lokasi: ${[lead.city, lead.province].filter(Boolean).join(", ") || "-"}
-${campaign ? `Kampanye: ${campaign.name} — ${campaign.objective ?? ""}` : ""}
+${campaign ? `Kampanye: ${campaign.name}: ${campaign.objective ?? ""}` : ""}
 ${data.instruction ? `Instruksi tambahan: ${data.instruction}` : ""}
 
 ATURAN:
@@ -82,8 +82,9 @@ ATURAN:
 - Email: ada "subject" menarik + body ~100-150 kata, sapa nama kontak/bisnis.
 - Personalisasi: sebutkan detail spesifik bisnis mereka (industri/lokasi/nama).
 - Jangan klaim berlebihan. CTA lembut (balas pesan / jadwal demo singkat).
-- Jangan gunakan placeholder seperti [Nama] — gunakan nama asli dari data lead.
+- Jangan gunakan placeholder seperti [Nama]; gunakan nama asli dari data lead.
 - Jangan sertakan tanda tangan perusahaan fiktif; akhiri dengan nama pengirim "Tim ${product.name}".
+- Jangan gunakan em dash (—); pakai koma atau titik.
 
 Kembalikan JSON array ${data.variations} objek: [{"subject": string|null, "body": string}]`;
 

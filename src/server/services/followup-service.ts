@@ -89,7 +89,7 @@ export class FollowUpService {
     return { ...seq, steps };
   }
 
-  /** Daftarkan lead ke sequence — mulai dari step 1. */
+  /** Daftarkan lead ke sequence; mulai dari step 1. */
   static async enroll(sequenceId: string, leadIds: string[]) {
     const seq = await this.getSequence(sequenceId);
     if (!seq) throw new Error("Sequence tidak ditemukan");
@@ -153,7 +153,7 @@ export class FollowUpService {
   }
 
   /**
-   * Tick scheduler — dipanggil worker berkala.
+   * Tick scheduler; dipanggil worker berkala.
    * Proses semua schedule active yang nextRunAt <= now.
    * Auto-stop saat lead reply / opt-out.
    */
@@ -228,7 +228,7 @@ export class FollowUpService {
           body: rendered.body,
         },
         undefined,
-        false // status draft — lalu langsung approved+queued (sequence = persetujuan user)
+        false // status draft, lalu langsung approved+queued (sequence = persetujuan user)
       );
       await OutreachService.approve([msg.id]);
       const { enqueue, QUEUES } = await import("../jobs/queue");
@@ -263,7 +263,7 @@ export class FollowUpService {
     }).where(eq(followupSchedules.id, id));
   }
 
-  /** Render body step — dari template (dengan variabel) atau instruction → AI generate. */
+  /** Render body step; dari template (dengan variabel) atau instruction → AI generate. */
   private static async renderStepBody(
     step: { templateId: string | null; instruction: string | null },
     lead: { id: string; businessName: string; contactPerson: string | null },

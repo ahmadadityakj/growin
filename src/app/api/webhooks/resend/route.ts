@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   } else {
     try {
       event = JSON.parse(payload);
-      signatureValid = null; // tidak diverifikasi — set RESEND_WEBHOOK_SECRET utk produksi
+      signatureValid = null; // tidak diverifikasi; set RESEND_WEBHOOK_SECRET utk produksi
     } catch {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }

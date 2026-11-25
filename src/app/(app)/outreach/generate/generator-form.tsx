@@ -183,7 +183,7 @@ export function GeneratorForm({
           </div>
           {selectedLead && !canSend && (
             <p className="text-sm text-amber-600">
-              Lead ini tidak punya {channel === "email" ? "email" : "nomor WhatsApp"} — draft tidak bisa dibuat.
+              Lead ini tidak punya {channel === "email" ? "email" : "nomor WhatsApp"} , jadi draft tidak bisa dibuat.
             </p>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}

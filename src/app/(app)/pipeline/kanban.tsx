@@ -25,8 +25,12 @@ export const STAGES: {
   { id: "not_interested", label: "Lost", statuses: ["not_interested", "invalid"], probability: 0, dotClass: "bg-red-400", colClass: "border-t-red-300" },
 ];
 
+function stageOf(status: string): (typeof STAGES)[number] {
+  return STAGES.find((s) => s.statuses.includes(status)) ?? STAGES[0];
+}
+
 function fmtRp(n: number | null): string {
-  if (!n) return "—";
+  if (!n) return "-";
   if (n >= 1_000_000) return `Rp ${(n / 1_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })}jt`;
   if (n >= 1_000) return `Rp ${(n / 1_000).toLocaleString("id-ID", { maximumFractionDigits: 0 })}rb`;
   return `Rp ${n.toLocaleString("id-ID")}`;
@@ -36,6 +40,8 @@ function Card({ lead }: { lead: PipelineLead }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [value, setValue] = useState(lead.dealValue?.toString() ?? "");
+  const [canDrag, setCanDrag] = useState(true);
+  const stage = stageOf(lead.status);
 
   function saveValue() {
     const n = value ? Number(value) : null;
@@ -48,19 +54,42 @@ function Card({ lead }: { lead: PipelineLead }) {
 
   return (
     <div
-      draggable
+      draggable={canDrag}
       onDragStart={(e) => e.dataTransfer.setData("text/plain", lead.id)}
       className="cursor-grab rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing"
     >
-      <Link
-        href={`/leads/${lead.id}`}
-        className="block text-sm font-medium leading-tight hover:underline"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {lead.businessName}
-      </Link>
+      <div className="flex items-start justify-between gap-1">
+        <Link
+          href={`/leads/${lead.id}`}
+          className="block text-sm font-medium leading-tight hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {lead.businessName}
+        </Link>
+        <select
+          aria-label={`Pindah tahap untuk ${lead.businessName}`}
+          value={stage.id}
+          disabled={pending}
+          onMouseDown={() => setCanDrag(false)}
+          onBlur={() => setCanDrag(true)}
+          onChange={(e) => {
+            setCanDrag(true);
+            startTransition(async () => {
+              await updateLeadStatus(lead.id, e.target.value as LeadStatus);
+              router.refresh();
+            });
+          }}
+          className="h-6 shrink-0 cursor-pointer rounded border bg-background px-1 text-xs text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        >
+          {STAGES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="mt-0.5 text-xs text-muted-foreground">
-        {[lead.industry, lead.city].filter(Boolean).join(" · ") || "—"}
+        {[lead.industry, lead.city].filter(Boolean).join(" · ") || "-"}
       </div>
       <div className="mt-2 flex items-center gap-1">
         <span className="text-xs text-muted-foreground">Rp</span>
@@ -70,9 +99,13 @@ function Card({ lead }: { lead: PipelineLead }) {
           value={value}
           placeholder="0"
           onChange={(e) => setValue(e.target.value)}
-          onBlur={saveValue}
+          onMouseDown={() => setCanDrag(false)}
+          onBlur={() => {
+            setCanDrag(true);
+            saveValue();
+          }}
           onKeyDown={(e) => e.key === "Enter" && saveValue()}
-          className="h-6 w-full rounded border-0 bg-transparent px-1 text-xs outline-none focus:bg-muted disabled:opacity-50"
+          className="h-6 w-full rounded border-0 bg-transparent px-1 text-xs outline-none focus:bg-muted focus-visible:ring-1 focus-visible:ring-emerald-500 disabled:opacity-50"
           disabled={pending}
           title="Nilai deal per bulan (enter/blur untuk simpan)"
         />
@@ -100,8 +133,22 @@ export function PipelineBoard({ byStage }: { byStage: Record<string, PipelineLea
     };
   }
 
+  const total = Object.values(byStage).reduce((a, c) => a + c.length, 0);
+  if (total === 0) {
+    return (
+      <div className="rounded-xl border border-dashed bg-muted/30 p-10 text-center">
+        <p className="text-sm font-medium">Pipeline masih kosong</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Tambahkan lead dari <Link href="/research" className="font-medium text-emerald-700 underline">Riset Pasar</Link>,{" "}
+          <Link href="/leads" className="font-medium text-emerald-700 underline">input manual</Link>, atau{" "}
+          <Link href="/leads/import" className="font-medium text-emerald-700 underline">import CSV</Link>.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
       {STAGES.map((stage) => {
         const cards = byStage[stage.id] ?? [];
         const sum = cards.reduce((a, l) => a + (l.dealValue ?? 0), 0);

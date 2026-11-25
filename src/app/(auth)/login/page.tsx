@@ -17,7 +17,7 @@ export default async function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Panel kiri — branding */}
+      {/* Panel kiri: branding */}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 p-12 text-white lg:flex">
         <div
           className="pointer-events-none absolute inset-0 opacity-30"
@@ -41,7 +41,7 @@ export default async function LoginPage() {
             Tumbuhkan bisnis dengan AI marketing agent
           </h1>
           <p className="mt-3 max-w-sm text-emerald-100">
-            Satu platform untuk riset prospek, outreach, dan follow-up — semua produk Kreava dalam satu tempat.
+            Satu platform untuk riset prospek, outreach, dan follow-up. Semua produk Kreava dalam satu tempat.
           </p>
           <GrowthHero className="mx-auto mt-6 w-full max-w-md" />
           <ul className="mt-4 space-y-2.5">
@@ -57,11 +57,11 @@ export default async function LoginPage() {
         </div>
 
         <p className="relative text-xs text-emerald-200">
-          © {new Date().getFullYear()} Kreava — Growin internal platform
+          © {new Date().getFullYear()} Kreava · Growin
         </p>
       </div>
 
-      {/* Panel kanan — form */}
+      {/* Panel kanan: form */}
       <div className="flex items-center justify-center bg-background p-6">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center gap-2 lg:hidden">

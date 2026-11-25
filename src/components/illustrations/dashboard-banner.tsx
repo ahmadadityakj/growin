@@ -1,5 +1,5 @@
 /**
- * Ilustrasi kecil untuk banner dashboard — dashboard mini + tren naik.
+ * Ilustrasi kecil untuk banner dashboard: dashboard mini + tren naik.
  * Translucent putih untuk ditaruh di atas gradient emerald.
  */
 export function DashboardBannerArt({ className }: { className?: string }) {

@@ -7,7 +7,7 @@ import { env } from "@/lib/env";
 export type ProviderKey =
   | "resend" | "fonnte" | "openai" | "brave" | "tavily" | "n8n" | "whatsapp_business";
 
-/** Field credential per provider — dipakai UI form & service. */
+/** Field credential per provider; dipakai UI form & service. */
 export const PROVIDER_FIELDS: Record<ProviderKey, { key: string; label: string; secret: boolean }[]> = {
   resend: [
     { key: "apiKey", label: "API Key", secret: true },
@@ -117,7 +117,7 @@ export class IntegrationService {
     });
   }
 
-  /** Test koneksi provider — return { ok, detail }. */
+  /** Test koneksi provider; return { ok, detail }. */
   static async testConnection(provider: ProviderKey): Promise<{ ok: boolean; detail: string }> {
     try {
       switch (provider) {
@@ -143,7 +143,7 @@ export class IntegrationService {
           });
           const data = await res.json().catch(() => ({}));
           return data.status || res.ok
-            ? { ok: true, detail: `Fonnte OK${data.device ? ` — ${data.device}` : ""}` }
+            ? { ok: true, detail: `Fonnte OK${data.device ? ` · ${data.device}` : ""}` }
             : { ok: false, detail: `Fonnte: ${data.reason ?? res.status}` };
         }
         case "openai": {
@@ -165,7 +165,7 @@ export class IntegrationService {
           const { provider: sp, reason } = getSearchProvider(provider);
           if (!sp) return { ok: false, detail: reason ?? "no provider" };
           const r = await sp.search("test", { count: 1 });
-          return { ok: true, detail: `${provider} OK — ${r.length} hasil` };
+          return { ok: true, detail: `${provider} OK · ${r.length} hasil` };
         }
         default:
           return { ok: false, detail: "Test belum diimplementasikan untuk provider ini" };

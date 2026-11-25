@@ -79,7 +79,7 @@ export default async function ReportsPage() {
     <div>
       <PageHeader
         title={t.nav.reports}
-        description="Semua metrik berasal dari data aktual di database — tidak ada angka simulasi."
+        description="Semua metrik berasal dari data aktual di database, tidak ada angka simulasi."
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -104,7 +104,7 @@ export default async function ReportsPage() {
           <CardHeader>
             <CardTitle className="text-base">Pemakaian AI</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Semua request OpenAI dari aplikasi ini — token dicatat per call. Biaya akuratnya cek dashboard OpenAI.
+              Semua request OpenAI dari aplikasi ini; token dicatat per call. Biaya akuratnya cek dashboard OpenAI.
             </p>
           </CardHeader>
           <CardContent>

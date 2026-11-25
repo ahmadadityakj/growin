@@ -8,10 +8,10 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { EnrichmentTable } from "./enrichment-table";
 
-export const metadata = { title: "Enrichment Kontak — Growin" };
+export const metadata = { title: "Enrichment Kontak | Growin" };
 
 export default async function EnrichmentPage() {
-  // lead yang kontaknya belum verified — prioritaskan yang minim kontak
+  // lead yang kontaknya belum verified, prioritaskan yang minim kontak
   const rows = await db
     .select()
     .from(leads)
@@ -23,7 +23,7 @@ export default async function EnrichmentPage() {
     <div>
       <PageHeader
         title="Enrichment Kontak"
-        description="Lengkapi & verifikasi kontak lead secara manual — klik link untuk cari di Google/Maps/Instagram, lalu paste nomor/email yang Anda temukan."
+        description="Lengkapi & verifikasi kontak lead secara manual: klik link untuk cari di Google/Maps/Instagram, lalu paste nomor/email yang Anda temukan."
         actions={
           <Link href="/leads/new">
             <Button>

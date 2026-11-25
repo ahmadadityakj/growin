@@ -6,9 +6,9 @@ import { IntegrationCard } from "./integration-card";
 import { t } from "@/lib/i18n";
 
 const PROVIDER_INFO: Record<ProviderKey, { title: string; desc: string }> = {
-  resend: { title: "Resend", desc: "Email sending — outreach & follow-up via email" },
-  fonnte: { title: "Fonnte", desc: "WhatsApp gateway — kirim pesan WA ke leads" },
-  openai: { title: "OpenAI", desc: "AI engine — riset, scoring, generate pesan" },
+  resend: { title: "Resend", desc: "Email untuk outreach & follow-up" },
+  fonnte: { title: "Fonnte", desc: "Gateway WhatsApp untuk kirim pesan ke leads" },
+  openai: { title: "OpenAI", desc: "Mesin AI untuk riset, scoring, generate pesan" },
   brave: { title: "Brave Search", desc: "Search API untuk riset pasar (gratis 2.000/bln)" },
   tavily: { title: "Tavily", desc: "Search API untuk riset pasar (gratis 1.000/bln)" },
   n8n: { title: "n8n", desc: "Workflow automation (opsional)" },

@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Growin — AI-Powered Business Growth Platform",
+  title: "Growin | AI-Powered Business Growth Platform",
   description: "Platform marketing & sales automation berbasis AI oleh Kreava",
 };
 

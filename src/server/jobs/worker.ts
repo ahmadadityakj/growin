@@ -1,5 +1,5 @@
 /**
- * Background worker — proses job dari pg-boss queue.
+ * Background worker: proses job dari pg-boss queue.
  * Jalankan terpisah dari Next.js: `npm run worker`
  */
 import "dotenv/config";

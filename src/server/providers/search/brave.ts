@@ -35,7 +35,7 @@ export class BraveSearchProvider implements SearchProvider {
     });
     if (!res.ok) {
       const err = `Brave search error: ${res.status} ${await res.text()}`;
-      await logSearch("error", `${query} — ${err}`);
+      await logSearch("error", `${query}: ${err}`);
       throw new Error(err);
     }
     await logSearch("success", query);

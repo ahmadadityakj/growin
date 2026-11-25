@@ -88,16 +88,16 @@ function buildQueries(job: {
   const queries: string[] = [];
 
   if (industry && location) {
-    // ronde 1 — query langsung
+    // ronde 1: query langsung
     queries.push(`${industry} di ${location}`);
     queries.push(`daftar ${industry} ${location}`);
     queries.push(`${industry} ${location} kontak email telepon`);
     queries.push(`${industry} ${location} site:*.id OR site:*.com OR site:*.sch.id`);
-    // ronde 2 — variasi phrasing
+    // ronde 2: variasi phrasing
     queries.push(`"${industry}" "${location}" alamat`);
     queries.push(`data ${industry} ${location}`);
     queries.push(`${industry} terbaik ${location}`);
-    // ronde 3 — direktori & alternatif
+    // ronde 3: direktori & alternatif
     queries.push(`list of ${industry} in ${location}`);
     queries.push(`${industry} ${location} profil website`);
     queries.push(`yayasan ${industry} ${location}`);
@@ -390,7 +390,7 @@ ${pageText.slice(0, 6000)}
 
     const job = await this.getJob(result.jobId);
 
-    // cek duplikat ulang saat approve — bisnis yang sama bisa ketemu
+    // cek duplikat ulang saat approve; bisnis yang sama bisa ketemu
     // di job lain dan keduanya di-approve
     const dup = result.duplicateOfLeadId
       ? await db.query.leads.findFirst({ where: eq(leads.id, result.duplicateOfLeadId) })
