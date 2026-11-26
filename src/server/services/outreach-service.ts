@@ -154,8 +154,10 @@ export class OutreachService {
           eq(outreachMessages.channel, "whatsapp")
         )
       );
-    if (!first?.firstAt) return WA_WARMUP[0].cap;
-    const days = Math.floor((Date.now() - first.firstAt.getTime()) / 86_400_000);
+    // min() lewat sql fragment mengembalikan string timestamp, bukan Date
+    const firstAt = first?.firstAt ? new Date(first.firstAt as unknown as string) : null;
+    if (!firstAt) return WA_WARMUP[0].cap;
+    const days = Math.floor((Date.now() - firstAt.getTime()) / 86_400_000);
     for (const stage of WA_WARMUP) {
       if (days < stage.untilDays) return stage.cap;
     }
