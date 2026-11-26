@@ -66,8 +66,14 @@ const menuGroups = [
   },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ isOwner = true }: { isOwner?: boolean }) {
   const pathname = usePathname();
+  const groups = isOwner
+    ? menuGroups
+    : menuGroups.map((g) => ({
+        ...g,
+        items: g.items.filter((i) => i.href !== "/integrations"),
+      }));
 
   return (
     <Sidebar>
@@ -88,7 +94,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-4">
-        {menuGroups.map((group) => (
+        {groups.map((group) => (
           <SidebarGroup key={group.label} className="px-0 py-1">
             <SidebarGroupLabel className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
               {group.label}

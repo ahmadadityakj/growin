@@ -22,7 +22,7 @@ export default async function AppLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar isOwner={scope === session.user.id} />
       <SidebarInset>
         <AppHeader userName={session.user.name} userEmail={session.user.email} />
         {billing.isTrial && billing.daysLeft !== null && (

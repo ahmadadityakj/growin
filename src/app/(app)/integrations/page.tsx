@@ -1,5 +1,6 @@
 import { IntegrationService, PROVIDER_FIELDS, type ProviderKey } from "@/server/services/integration-service";
-import { requireUserId } from "@/lib/session";
+import { requireUserId, requireActorId } from "@/lib/session";
+import { TeamService } from "@/server/services/team-service";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default async function IntegrationsPage() {
   const uid = await requireUserId();
+  const actor = await requireActorId();
+  const isOwner = (await TeamService.resolveScope(actor)) === actor;
   const rows = await IntegrationService.list(uid);
   const byProvider = new Map(rows.map((r) => [r.provider, r]));
 
@@ -49,11 +52,17 @@ export default async function IntegrationsPage() {
                 <p className="text-sm text-muted-foreground">{PROVIDER_INFO[key].desc}</p>
               </CardHeader>
               <CardContent>
+                {!isOwner ? (
+                  <p className="text-sm text-muted-foreground">
+                    Kredensial hanya bisa dikelola oleh pemilik workspace.
+                  </p>
+                ) : (
                 <IntegrationCard
                   provider={key}
                   fields={PROVIDER_FIELDS[key]}
                   existing={row ? { name: row.name, fields: Object.keys(row.credentials ?? {}) } : null}
                 />
+                )}
               </CardContent>
             </Card>
           );
