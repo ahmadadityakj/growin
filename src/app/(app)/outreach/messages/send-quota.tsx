@@ -11,12 +11,13 @@ export async function SendQuota({
   teamIds: string[];
   scopeId: string;
 }) {
-  const [sent, waCap, emCap, waOptouts, waFailing] = await Promise.all([
+  const [sent, waCap, emCap, waOptouts, waFailing, dupBodies] = await Promise.all([
     OutreachService.sentToday(teamIds),
     OutreachService.dailyCapFor("whatsapp", teamIds),
     OutreachService.dailyCapFor("email", teamIds),
     OutreachService.optoutsToday(scopeId, "whatsapp"),
     OutreachService.consecutiveFailures("whatsapp", teamIds),
+    OutreachService.duplicateBodyCount(teamIds),
   ]);
   const wa = sent.whatsapp ?? 0;
   const em = sent.email ?? 0;
@@ -34,6 +35,12 @@ export async function SendQuota({
           {waFailing
             ? "Pengiriman WhatsApp ditahan: 5 kirim terakhir gagal beruntun. Periksa koneksi nomor/provider Anda di Integrations."
             : `Pengiriman WhatsApp ditahan: ${waOptouts} leads minta berhenti dihubungi hari ini. Evaluasi isi pesan sebelum lanjut.`}
+        </p>
+      )}
+      {dupBodies > 0 && (
+        <p className="text-xs font-medium text-amber-700">
+          {dupBodies} pesan dalam antrean punya isi yang sama persis. Kirim pesan identik
+          massal mempercepat blokir nomor — pakai generator AI atau edit supaya tiap pesan bervariasi.
         </p>
       )}
     </div>

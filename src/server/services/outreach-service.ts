@@ -197,6 +197,22 @@ export class OutreachService {
     return rows.length === FAILURE_BRAKE && rows.every((r) => r.status === "failed");
   }
 
+  /** Pesan copy-paste identik dalam antrean — sinyal spam yang mempercepat blokir. */
+  static async duplicateBodyCount(teamIds: string[]) {
+    const rows = await db
+      .select({ body: outreachMessages.body, c: sql<number>`count(*)::int` })
+      .from(outreachMessages)
+      .where(
+        and(
+          inArray(outreachMessages.createdById, teamIds),
+          inArray(outreachMessages.status, ["pending_approval", "approved", "queued"])
+        )
+      )
+      .groupBy(outreachMessages.body)
+      .having(sql`count(*) >= 5`);
+    return rows.reduce((acc, r) => acc + r.c, 0);
+  }
+
   /** Jadwal ulang ke besok pagi — dipakai saat rem darurat di worker. */
   static async deferToTomorrow(messageId: string, reason: string) {
     const base = new Date();
