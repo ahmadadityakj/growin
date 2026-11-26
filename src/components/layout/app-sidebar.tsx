@@ -17,6 +17,7 @@ import {
   BarChart3,
   Plug,
   Settings,
+  ShieldCheck,
   Sprout,
 } from "lucide-react";
 import {
@@ -73,9 +74,11 @@ const menuGroups = [
 
 export function AppSidebar({
   isOwner = true,
+  isAdmin = false,
   replyCount = 0,
 }: {
   isOwner?: boolean;
+  isAdmin?: boolean;
   replyCount?: number;
 }) {
   const pathname = usePathname();
@@ -85,6 +88,12 @@ export function AppSidebar({
         ...g,
         items: g.items.filter((i) => i.href !== "/integrations" && i.href !== "/billing"),
       }));
+  if (isAdmin) {
+    groups.push({
+      label: "Platform",
+      items: [{ href: "/admin", icon: ShieldCheck, label: "Admin" }],
+    });
+  }
 
   return (
     <Sidebar>

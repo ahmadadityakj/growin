@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { getBillingStatus } from "@/lib/billing";
+import { isPlatformAdmin } from "@/lib/admin";
 import { TeamService } from "@/server/services/team-service";
 import { TrialBanner } from "@/components/layout/trial-banner";
 import { TrialExpired } from "@/components/layout/trial-expired";
@@ -31,7 +32,11 @@ export default async function AppLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar isOwner={scope === session.user.id} replyCount={replyCount} />
+      <AppSidebar
+        isOwner={scope === session.user.id}
+        isAdmin={isPlatformAdmin(session.user.email)}
+        replyCount={replyCount}
+      />
       <SidebarInset>
         <AppHeader userName={session.user.name} userEmail={session.user.email} />
         {billing.isTrial && billing.daysLeft !== null && (
