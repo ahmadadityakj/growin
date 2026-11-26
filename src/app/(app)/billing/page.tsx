@@ -21,14 +21,14 @@ const PLANS = [
     id: "growth",
     name: "Growth",
     price: 349_000,
-    features: ["10.000 leads", "10 produk", "Riset AI 150/bulan", "AI platform 4.000 operasi/bulan", "Follow-up sequence", "3 anggota tim"],
+    features: ["10.000 leads", "10 produk", "Riset AI 150/bulan", "AI platform 3.000 operasi/bulan", "Follow-up sequence", "3 anggota tim"],
     recommended: true,
   },
   {
     id: "pro",
     name: "Pro",
     price: 799_000,
-    features: ["Leads tanpa batas", "Produk tanpa batas", "Riset AI 500/bulan", "AI platform 10.000 operasi/bulan", "10 anggota tim", "Support prioritas"],
+    features: ["Leads tanpa batas", "Produk tanpa batas", "Riset AI 500/bulan", "AI platform 8.000 operasi/bulan", "10 anggota tim", "Support prioritas"],
   },
 ] as const;
 

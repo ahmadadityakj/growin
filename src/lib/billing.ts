@@ -46,7 +46,7 @@ export const PLAN_LIMITS: Record<
     maxProducts: 10,
     researchJobsPerMonth: 150,
     researchTargetMax: 100,
-    platformAICallsPerMonth: 4_000,
+    platformAICallsPerMonth: 3_000,
     maxTeamSeats: 3,
   },
   pro: {
@@ -54,7 +54,7 @@ export const PLAN_LIMITS: Record<
     maxProducts: null,
     researchJobsPerMonth: 500,
     researchTargetMax: 200,
-    platformAICallsPerMonth: 10_000,
+    platformAICallsPerMonth: 8_000,
     maxTeamSeats: 10,
   },
 };
