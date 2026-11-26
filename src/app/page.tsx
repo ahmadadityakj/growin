@@ -346,14 +346,37 @@ export default async function LandingPage() {
             </div>
           ))}
         </div>
-        <div className="mt-8 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 text-sm">
-          <span className="font-semibold text-emerald-900">Semua akun mulai dari trial 14 hari. </span>
-          <span className="text-muted-foreground">
-            Yang Anda dapat selama trial: 300 leads, 1 produk, 5 riset AI (maks 50 prospek per riset),
-            200 operasi AI platform, semua channel outreach, Inbox, follow-up, dan pipeline penuh.
-            Pesan dikirim dari nomor WA/domain email Anda sendiri, bukan nomor Growin.
-            Setelah 14 hari, data tetap tersimpan; upgrade untuk melanjutkan.
-          </span>
+        <div className="mt-8 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 p-6 text-white shadow-lg shadow-emerald-600/25 sm:p-7">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-lg font-bold tracking-tight sm:text-xl">
+                Semua akun mulai dari trial 14 hari — tanpa kartu kredit
+              </div>
+              <p className="mt-1 max-w-lg text-sm text-emerald-100">
+                Pesan dikirim dari nomor WA/domain email Anda sendiri, bukan nomor Growin.
+                Setelah 14 hari, data tetap tersimpan; upgrade untuk melanjutkan.
+              </p>
+            </div>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="shrink-0 bg-white text-emerald-700 shadow-md hover:bg-emerald-50"
+              render={<Link href={ctaHref}>{ctaLabel} <ArrowRight className="ml-1" /></Link>}
+            />
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              ["300", "leads di CRM"],
+              ["5", "riset AI (maks 50 prospek/riset)"],
+              ["200", "operasi AI platform"],
+              ["Semua", "channel outreach, Inbox, follow-up & pipeline"],
+            ].map(([num, label]) => (
+              <div key={label} className="rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm">
+                <div className="text-xl font-bold tracking-tight">{num}</div>
+                <div className="mt-0.5 text-xs leading-snug text-emerald-100">{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
           Operasi AI dihitung dari pemakaian AI bawaan Growin. Isi API key sendiri
