@@ -82,17 +82,18 @@ export function AppSidebar({
   replyCount?: number;
 }) {
   const pathname = usePathname();
-  const groups = isOwner
+  let groups = isOwner
     ? menuGroups
     : menuGroups.map((g) => ({
         ...g,
         items: g.items.filter((i) => i.href !== "/integrations" && i.href !== "/billing"),
       }));
   if (isAdmin) {
-    groups.push({
-      label: "Platform",
-      items: [{ href: "/admin", icon: ShieldCheck, label: "Admin" }],
-    });
+    // spread — jangan push ke array shared (menuGroups module-level)
+    groups = [
+      ...groups,
+      { label: "Platform", items: [{ href: "/admin", icon: ShieldCheck, label: "Admin" }] },
+    ];
   }
 
   return (
