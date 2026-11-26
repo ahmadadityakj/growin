@@ -19,6 +19,8 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().optional(),
   BILLING_BANK_INFO: z.string().optional(),
+  /** Email admin platform (pisah koma) — bisa verifikasi pembayaran & extend trial user. */
+  PLATFORM_ADMIN_EMAILS: z.string().optional(),
   /** Nomor WA support untuk request integrasi/bantuan — format internasional tanpa +, mis. 6281234567890 */
   SUPPORT_WA_NUMBER: z.string().optional(),
   /** Domain inbound untuk Reply-To outreach email, mis. reply.growin.app — MX-nya diarahkan ke inbound handler (Cloudflare Email Worker/Resend). */

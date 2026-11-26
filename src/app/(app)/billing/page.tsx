@@ -1,14 +1,16 @@
-import { eq, desc, and, count, isNull } from "drizzle-orm";
+import { eq, desc, asc, and, count, isNull, sql } from "drizzle-orm";
 import { db } from "@/server/db";
-import { billingRequests, users, leads } from "@/server/db/schema";
+import { billingRequests, users, leads, teamMembers } from "@/server/db/schema";
 import { requireUserId, requireActorId } from "@/lib/session";
 import { getBillingStatus, platformAIUsage, planLimitsOf } from "@/lib/billing";
+import { isPlatformAdmin } from "@/lib/admin";
 import { env } from "@/lib/env";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UpgradeForm } from "./upgrade-form";
 import { AdminRequests } from "./admin-requests";
+import { AdminTrials } from "./admin-trials";
 
 const PLANS = [
   {
@@ -54,15 +56,30 @@ export default async function BillingPage() {
     orderBy: desc(billingRequests.createdAt),
   });
 
-  const pendingAll =
-    me?.role === "admin"
-      ? await db
-          .select({ req: billingRequests, email: users.email, name: users.name })
-          .from(billingRequests)
-          .innerJoin(users, eq(billingRequests.userId, users.id))
-          .where(eq(billingRequests.status, "pending"))
-          .orderBy(desc(billingRequests.createdAt))
-      : [];
+  const isAdmin = isPlatformAdmin(me?.email);
+  const pendingAll = isAdmin
+    ? await db
+        .select({ req: billingRequests, email: users.email, name: users.name })
+        .from(billingRequests)
+        .innerJoin(users, eq(billingRequests.userId, users.id))
+        .where(eq(billingRequests.status, "pending"))
+        .orderBy(desc(billingRequests.createdAt))
+    : [];
+
+  // user trial (owner saja — member tim mewarisi plan owner, bukan trial sendiri)
+  const trialUsers = isAdmin
+    ? await db
+        .select({ id: users.id, email: users.email, name: users.name, trialEndsAt: users.trialEndsAt, createdAt: users.createdAt })
+        .from(users)
+        .where(
+          and(
+            eq(users.plan, "trial"),
+            sql`not exists (select 1 from ${teamMembers} where ${teamMembers.memberId} = ${users.id})`
+          )
+        )
+        .orderBy(asc(users.trialEndsAt))
+        .limit(30)
+    : [];
 
   const bankInfo = env.BILLING_BANK_INFO ?? "BCA 0000000000 a.n. Kreava (atur BILLING_BANK_INFO di env)";
 
@@ -103,7 +120,29 @@ export default async function BillingPage() {
         </CardContent>
       </Card>
 
-      {me?.role === "admin" && pendingAll.length > 0 && (
+      {isAdmin && trialUsers.length > 0 && (
+        <Card className="mb-5 border-emerald-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">User dalam trial ({trialUsers.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AdminTrials
+              rows={trialUsers.map((u) => ({
+                id: u.id,
+                email: u.email,
+                userName: u.name,
+                trialEndsAt: u.trialEndsAt?.toISOString() ?? null,
+                daysLeft: u.trialEndsAt
+                  ? Math.ceil((u.trialEndsAt.getTime() - Date.now()) / 86_400_000)
+                  : 0,
+                createdAt: u.createdAt.toISOString(),
+              }))}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {isAdmin && pendingAll.length > 0 && (
         <Card className="mb-5 border-amber-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Konfirmasi pembayaran masuk ({pendingAll.length})</CardTitle>
