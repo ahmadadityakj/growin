@@ -7,6 +7,7 @@ export const en: Dictionary = {
   },
   nav: {
     dashboard: "Dashboard",
+    inbox: "Inbox",
     tasks: "AI Task Center",
     products: "Products",
     campaigns: "Campaigns",

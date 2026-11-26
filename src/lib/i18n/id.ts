@@ -5,6 +5,7 @@ export const id = {
   },
   nav: {
     dashboard: "Dashboard",
+    inbox: "Inbox",
     tasks: "Pusat Tugas AI",
     products: "Produk",
     campaigns: "Kampanye",

@@ -1,10 +1,27 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { TeamService } from "@/server/services/team-service";
 import {
   outreachMessages, outreachLogs, leads, leadActivities, unsubscribeRecords,
 } from "@/server/db/schema";
 import { z } from "zod";
+
+/**
+ * Batas kirim per channel per hari + jeda acak antar pesan.
+ * Melindungi nomor WA / domain email user dari blokir provider
+ * (kirim massal sekaligus = sinyal spam).
+ */
+export const SEND_PACING: Record<
+  "whatsapp" | "email",
+  { dailyCap: number; minDelayS: number; maxDelayS: number }
+> = {
+  whatsapp: { dailyCap: 50, minDelayS: 45, maxDelayS: 120 },
+  email: { dailyCap: 200, minDelayS: 5, maxDelayS: 20 },
+};
+
+/** Kirim tidak boleh lewat jam ini — WA/email malam-malam terasa seperti spam. */
+const SEND_CUTOFF_HOUR = 20;
+const SEND_START_HOUR = 8;
 
 export const draftInputSchema = z.object({
   leadId: z.string().uuid(),
@@ -84,31 +101,100 @@ export class OutreachService {
     for (const id of ids) await this.log(id, "rejected");
   }
 
-  /** Antre pesan yang approved & sudah waktunya kirim ke worker. */
-  static async queueApproved(userId?: string) {
-    const teamIds = userId ? await TeamService.teamIdsOf(userId) : undefined;
+  /** Pesan terkirim hari ini per channel (untuk hitung sisa kuota harian). */
+  static async sentToday(teamIds: string[]) {
+    const dayStart = new Date();
+    dayStart.setHours(0, 0, 0, 0);
+    const rows = await db
+      .select({ channel: outreachMessages.channel, c: sql<number>`count(*)::int` })
+      .from(outreachMessages)
+      .where(
+        and(
+          inArray(outreachMessages.createdById, teamIds),
+          gte(outreachMessages.sentAt, dayStart),
+          inArray(outreachMessages.status, ["sent", "delivered", "replied"])
+        )
+      )
+      .groupBy(outreachMessages.channel);
+    const map: Record<string, number> = {};
+    for (const r of rows) map[r.channel] = r.c;
+    return map;
+  }
+
+  /**
+   * Waktu kirim untuk slot ke-N hari ini.
+   * Slot = pesan yang sudah terkirim hari ini + antrian baru.
+   * Lebih dari cap harian → digeser ke hari berikutnya jam 08:00,
+   * tetap dengan jeda acak antar pesan.
+   */
+  static planSendTime(slotIndex: number, channel: "whatsapp" | "email", now = new Date()): Date {
+    const cfg = SEND_PACING[channel];
+    const day = Math.floor(slotIndex / cfg.dailyCap);
+    const inDay = slotIndex % cfg.dailyCap;
+    const jitterMs = (cfg.minDelayS + Math.random() * (cfg.maxDelayS - cfg.minDelayS)) * 1000;
+
+    if (day > 0) {
+      const base = new Date(now);
+      base.setDate(base.getDate() + day);
+      base.setHours(SEND_START_HOUR, 0, 0, 0);
+      return new Date(base.getTime() + (inDay + 1) * jitterMs);
+    }
+
+    const sendAt = new Date(now.getTime() + (inDay + 1) * jitterMs);
+    const cutoff = new Date(now);
+    cutoff.setHours(SEND_CUTOFF_HOUR, 30, 0, 0);
+    if (sendAt > cutoff) {
+      const base = new Date(now);
+      base.setDate(base.getDate() + 1);
+      base.setHours(SEND_START_HOUR, 0, 0, 0);
+      return new Date(base.getTime() + (inDay + 1) * jitterMs);
+    }
+    return sendAt;
+  }
+
+  /**
+   * Antre pesan yang approved & sudah waktunya kirim ke worker.
+   * Pesan dijadwalkan dengan pacing: jeda acak antar kirim, cap harian
+   * per channel, tidak kirim malam. Kelebihan kuota otomatis dijadwalkan
+   * ke hari berikutnya (scheduledAt menunjukkan rencana kirim).
+   */
+  static async queueApproved(userId?: string): Promise<{ queued: number; deferred: number }> {
+    const teamIds = userId ? await TeamService.teamIdsOf(userId) : [""];
     const { enqueue, QUEUES } = await import("../jobs/queue");
     const rows = await db
       .select()
       .from(outreachMessages)
       .where(
         and(
-          teamIds ? inArray(outreachMessages.createdById, teamIds) : undefined,
-          eq(outreachMessages.status, "approved"),
-          // scheduledAt null atau sudah lewat
-          // drizzle: scheduledAt <= now OR scheduledAt is null
+          inArray(outreachMessages.createdById, teamIds),
+          eq(outreachMessages.status, "approved")
         )
-      );
-    let queued = 0;
+      )
+      .orderBy(outreachMessages.createdAt);
     const now = new Date();
+    const sent = await this.sentToday(teamIds);
+    const pending: Record<string, number> = {};
+    let queued = 0;
+    let deferred = 0;
+
     for (const m of rows) {
       if (m.scheduledAt && m.scheduledAt > now) continue;
-      await enqueue(QUEUES.messageSend, { messageId: m.id });
-      await this.setStatus(m.id, "queued");
-      await this.log(m.id, "queued");
+      const slot = (sent[m.channel] ?? 0) + (pending[m.channel] ?? 0);
+      pending[m.channel] = (pending[m.channel] ?? 0) + 1;
+      const sendAt = this.planSendTime(slot, m.channel, now);
+      const startAfterS = Math.max(1, Math.round((sendAt.getTime() - now.getTime()) / 1000));
+      await enqueue(QUEUES.messageSend, { messageId: m.id }, { startAfter: startAfterS });
+      await this.setStatus(m.id, "queued", { scheduledAt: sendAt });
+      const isDeferred = sendAt.toDateString() !== now.toDateString();
+      await this.log(
+        m.id,
+        "queued",
+        isDeferred ? `Dijadwalkan kirim ${sendAt.toLocaleString("id-ID")} (kuota harian)` : undefined
+      );
       queued++;
+      if (isDeferred) deferred++;
     }
-    return queued;
+    return { queued, deferred };
   }
 
   /** Kirim satu pesan; dipanggil worker. */

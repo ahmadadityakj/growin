@@ -160,6 +160,11 @@ export async function POST(req: NextRequest) {
             .set({ status: "stopped_replied", updatedAt: new Date() })
             .where(and(eq(followupSchedules.leadId, lead.id), eq(followupSchedules.status, "active")));
 
+          // notif email ke owner — fire & forget, jangan blokir webhook
+          void import("@/server/services/notification-service").then(({ NotificationService }) =>
+            NotificationService.notifyNewReply(lead.id, content).catch(() => {})
+          );
+
           if (/^(stop|berhenti|unsubscribe|jangan hubungi)/i.test(content.trim())) {
             const { unsubscribeRecords } = await import("@/server/db/schema");
             await db

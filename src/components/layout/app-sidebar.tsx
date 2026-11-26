@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CreditCard,
+  Inbox,
   LayoutDashboard,
   Sparkles,
   Package,
@@ -37,6 +38,7 @@ const menuGroups = [
     label: "Utama",
     items: [
       { href: "/dashboard", icon: LayoutDashboard, label: t.nav.dashboard },
+      { href: "/inbox", icon: Inbox, label: t.nav.inbox },
       { href: "/tasks", icon: Sparkles, label: t.nav.tasks },
     ],
   },
@@ -123,7 +125,7 @@ export function AppSidebar({
                               className={`h-4 w-4 ${active ? "text-emerald-600" : ""}`}
                             />
                             <span>{item.label}</span>
-                            {item.href === "/outreach" && replyCount > 0 && (
+                            {item.href === "/inbox" && replyCount > 0 && (
                               <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 text-[10px] font-bold text-white">
                                 {replyCount > 99 ? "99+" : replyCount}
                               </span>

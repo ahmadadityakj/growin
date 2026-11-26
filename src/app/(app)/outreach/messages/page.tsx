@@ -15,6 +15,7 @@ import { ChannelStatus } from "../channel-status";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { MessageActions, QueueButton } from "./message-actions";
+import { SendQuota } from "./send-quota";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -67,6 +68,7 @@ export default async function MessagesPage({
       />
       <OutreachNav />
       <ChannelStatus scopeId={scopeId} />
+      <SendQuota teamIds={teamIds} />
 
       {rows.length === 0 ? (
         <EmptyState
@@ -116,7 +118,9 @@ export default async function MessagesPage({
                     <StatusBadge label={message.status} colorClass={STATUS_COLORS[message.status]} />
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(message.createdAt, { addSuffix: true, locale: localeId })}
+                    {message.status === "queued" && message.scheduledAt
+                      ? `kirim ${formatDistanceToNow(message.scheduledAt, { addSuffix: true, locale: localeId })}`
+                      : formatDistanceToNow(message.createdAt, { addSuffix: true, locale: localeId })}
                   </TableCell>
                   <TableCell className="text-right">
                     <MessageActions message={message} />

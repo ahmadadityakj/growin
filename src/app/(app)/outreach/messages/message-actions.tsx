@@ -15,20 +15,26 @@ type Message = typeof outreachMessages.$inferSelect;
 export function QueueButton() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [result, setResult] = useState<number | null>(null);
+  const [result, setResult] = useState<{ queued: number; deferred: number } | null>(null);
   return (
     <Button
       variant="outline"
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
-          const n = await queueApprovedMessages();
-          setResult(n);
+          const r = await queueApprovedMessages();
+          setResult(r);
           router.refresh();
         })
       }
     >
-      {pending ? "Mengantrekan..." : result != null ? `${result} diantrekan` : "Kirim yang Disetujui"}
+      {pending
+        ? "Mengantrekan..."
+        : result != null
+          ? result.deferred > 0
+            ? `${result.queued} diantrekan (${result.deferred} dijadwalkan besok+)`
+            : `${result.queued} diantrekan`
+          : "Kirim yang Disetujui"}
     </Button>
   );
 }
