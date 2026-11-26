@@ -11,6 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { OutreachNav } from "../nav";
+import { ChannelStatus } from "../channel-status";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { MessageActions, QueueButton } from "./message-actions";
@@ -35,7 +36,7 @@ export default async function MessagesPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
-  const { teamIds } = await requireTeam();
+  const { teamIds, scopeId } = await requireTeam();
 
   const rows = await db
     .select({
@@ -65,6 +66,7 @@ export default async function MessagesPage({
         actions={<QueueButton />}
       />
       <OutreachNav />
+      <ChannelStatus scopeId={scopeId} />
 
       {rows.length === 0 ? (
         <EmptyState

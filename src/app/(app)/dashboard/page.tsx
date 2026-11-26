@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { leads, campaigns, outreachMessages, leadActivities, users, products, researchJobs } from "@/server/db/schema";
 import { CampaignService } from "@/server/services/campaign-service";
 import { TeamService } from "@/server/services/team-service";
+import { IntegrationService } from "@/server/services/integration-service";
 import { StatCard, type StatTone } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +46,7 @@ export default async function DashboardPage() {
     productCount,
     researchCount,
     contactReady,
+    channelReady,
   ] = await Promise.all([
     db.select({ c: sql<number>`count(*)::int` }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, scopeId))),
     db
@@ -107,6 +109,10 @@ export default async function DashboardPage() {
           sql`(${leads.email} is not null or ${leads.whatsappNumber} is not null or ${leads.phone} is not null)`
         )
       ),
+    Promise.all([
+      IntegrationService.hasConfiguredChannel("whatsapp", scopeId),
+      IntegrationService.hasConfiguredChannel("email", scopeId),
+    ]).then(([wa, em]) => wa || em),
   ]);
 
   const stats: { title: string; value: number; icon: typeof Users; hint?: string; tone: StatTone }[] = [
@@ -145,6 +151,12 @@ export default async function DashboardPage() {
       label: "Lengkapi kontak lead (sering perlu kerja manual)",
       href: "/leads/enrichment",
       cta: "Buka Enrichment",
+    },
+    {
+      done: channelReady === true,
+      label: "Aktifkan channel pengiriman (WA/email) pakai akun Anda sendiri",
+      href: "/integrations",
+      cta: "Atur channel",
     },
     {
       done: sentMessages[0].c > 0,

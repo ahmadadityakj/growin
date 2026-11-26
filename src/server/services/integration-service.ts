@@ -226,6 +226,21 @@ export class IntegrationService {
     return { provider: row.provider, creds: this.decryptRow(row.provider, row) };
   }
 
+  /** Ada provider terkonfigurasi (kredensial terisi) di slot ini? */
+  static async hasConfiguredChannel(slot: "whatsapp" | "email", ownerId: string): Promise<boolean> {
+    const rows = await db
+      .select()
+      .from(integrations)
+      .where(
+        and(
+          inArray(integrations.provider, SLOT_PROVIDERS[slot]),
+          ne(integrations.status, "inactive"),
+          eq(integrations.ownerId, ownerId)
+        )
+      );
+    return rows.some((r) => Object.keys(r.credentials ?? {}).length > 0);
+  }
+
   /**
    * Pilih provider aktif untuk satu slot.
    * "platform" (slot ai/search) → nonaktifkan semua row di slot = pakai bawaan.

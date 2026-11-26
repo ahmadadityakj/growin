@@ -5,6 +5,7 @@ import { CampaignService } from "@/server/services/campaign-service";
 import { PageHeader } from "@/components/shared/page-header";
 import { OutreachNav } from "../nav";
 import { GeneratorForm } from "./generator-form";
+import { ChannelStatus } from "../channel-status";
 
 export default async function GeneratePage({
   searchParams,
@@ -24,6 +25,7 @@ export default async function GeneratePage({
     <div>
       <PageHeader title="AI Message Generator" description="Generate pesan personal berdasarkan profil lead + knowledge produk" />
       <OutreachNav />
+      <ChannelStatus scopeId={uid} />
       <GeneratorForm
         leads={leads.rows.map((l) => ({
           id: l.id,
