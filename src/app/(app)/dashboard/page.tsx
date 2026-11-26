@@ -1,9 +1,9 @@
-import { Users, UserPlus, CheckCircle2, Megaphone, Send, MessageSquareReply, Trophy, ArrowRight } from "lucide-react";
-import { sql, eq, and, inArray, isNull, gte, desc } from "drizzle-orm";
+import { Users, UserPlus, CheckCircle2, Megaphone, Send, MessageSquareReply, Trophy, ArrowRight, CalendarClock, Inbox, Target } from "lucide-react";
+import { sql, eq, and, inArray, isNull, gte, lte, desc } from "drizzle-orm";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { db } from "@/server/db";
-import { leads, campaigns, outreachMessages, leadActivities, users, products, researchJobs } from "@/server/db/schema";
+import { leads, campaigns, outreachMessages, leadActivities, users, products, researchJobs, messageReplies, followupSchedules } from "@/server/db/schema";
 import { CampaignService } from "@/server/services/campaign-service";
 import { TeamService } from "@/server/services/team-service";
 import { IntegrationService } from "@/server/services/integration-service";
@@ -31,7 +31,9 @@ export default async function DashboardPage() {
   const scopeId = await TeamService.resolveScope(uid);
   const teamIds = await TeamService.teamIdsOf(uid);
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
   const now = new Date();
+  const endOfToday = new Date(now); endOfToday.setHours(23, 59, 59, 999);
 
   const [
     totalLeads,
@@ -47,6 +49,9 @@ export default async function DashboardPage() {
     researchCount,
     contactReady,
     channelReady,
+    followUpDue,
+    recentReplies,
+    qualifiedUncontacted,
   ] = await Promise.all([
     db.select({ c: sql<number>`count(*)::int` }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, scopeId))),
     db
@@ -113,6 +118,30 @@ export default async function DashboardPage() {
       IntegrationService.hasConfiguredChannel("whatsapp", scopeId),
       IntegrationService.hasConfiguredChannel("email", scopeId),
     ]).then(([wa, em]) => wa || em),
+    db
+      .select({ id: followupSchedules.id, leadName: leads.businessName, leadId: leads.id, nextRunAt: followupSchedules.nextRunAt })
+      .from(followupSchedules)
+      .innerJoin(leads, eq(followupSchedules.leadId, leads.id))
+      .where(and(eq(followupSchedules.status, "active"), eq(leads.ownerId, scopeId), lte(followupSchedules.nextRunAt, endOfToday)))
+      .orderBy(followupSchedules.nextRunAt)
+      .limit(5),
+    db
+      .select({ id: messageReplies.id, sender: messageReplies.sender, content: messageReplies.content, createdAt: messageReplies.createdAt, leadName: leads.businessName, leadId: leads.id })
+      .from(messageReplies)
+      .innerJoin(leads, eq(messageReplies.leadId, leads.id))
+      .where(and(eq(leads.ownerId, scopeId), gte(messageReplies.createdAt, twoDaysAgo)))
+      .orderBy(desc(messageReplies.createdAt))
+      .limit(5),
+    db
+      .select({ id: leads.id, businessName: leads.businessName })
+      .from(leads)
+      .where(
+        and(
+          isNull(leads.deletedAt), eq(leads.ownerId, scopeId), eq(leads.status, "qualified"),
+          sql`not exists (select 1 from ${outreachMessages} where ${outreachMessages.leadId} = ${leads.id})`
+        )
+      )
+      .limit(5),
   ]);
 
   const stats: { title: string; value: number; icon: typeof Users; hint?: string; tone: StatTone }[] = [
@@ -141,10 +170,10 @@ export default async function DashboardPage() {
       cta: "Buat produk",
     },
     {
-      done: researchCount[0].c > 0,
-      label: "Jalankan riset AI untuk cari prospek",
-      href: "/research/new",
-      cta: "Mulai riset",
+      done: totalLeads[0].c > 0,
+      label: "Masukkan prospek pertama — impor CSV, tambah manual, atau riset AI",
+      href: "/leads",
+      cta: "Tambah prospek",
     },
     {
       done: contactReady[0].c > 0,
@@ -235,6 +264,64 @@ export default async function DashboardPage() {
               Catatan: riset AI hanya menemukan bisnis dengan jejak online. Kontak WhatsApp sering
               perlu dilengkapi manual — itu bagian dari alurnya, bukan bug.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+
+      {(followUpDue.length > 0 || recentReplies.length > 0 || qualifiedUncontacted.length > 0) && (
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Agenda hari ini</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {followUpDue.length > 0 && (
+              <div>
+                <div className="mb-1.5 flex items-center gap-2 text-sm font-medium">
+                  <CalendarClock className="h-4 w-4 text-amber-600" /> Follow-up jatuh tempo
+                  <Link href="/follow-ups" className="text-xs font-normal text-emerald-700 hover:underline">lihat semua →</Link>
+                </div>
+                <ul className="space-y-1">
+                  {followUpDue.map((f) => (
+                    <li key={f.id} className="text-sm text-muted-foreground">
+                      <Link href={`/leads/${f.leadId}`} className="hover:underline">{f.leadName}</Link>
+                      {f.nextRunAt && <span className="text-xs"> · {f.nextRunAt.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {recentReplies.length > 0 && (
+              <div>
+                <div className="mb-1.5 flex items-center gap-2 text-sm font-medium">
+                  <Inbox className="h-4 w-4 text-emerald-600" /> Balasan baru (48 jam)
+                  <Link href="/outreach/messages" className="text-xs font-normal text-emerald-700 hover:underline">buka pesan →</Link>
+                </div>
+                <ul className="space-y-1">
+                  {recentReplies.map((r) => (
+                    <li key={r.id} className="text-sm text-muted-foreground">
+                      <Link href={`/leads/${r.leadId}`} className="font-medium text-foreground hover:underline">{r.leadName ?? r.sender}</Link>
+                      <span className="text-xs"> — “{(r.content ?? "").slice(0, 80)}”</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {qualifiedUncontacted.length > 0 && (
+              <div>
+                <div className="mb-1.5 flex items-center gap-2 text-sm font-medium">
+                  <Target className="h-4 w-4 text-violet-600" /> Qualified tapi belum dihubungi
+                  <Link href="/pipeline" className="text-xs font-normal text-emerald-700 hover:underline">buka pipeline →</Link>
+                </div>
+                <ul className="space-y-1">
+                  {qualifiedUncontacted.map((l) => (
+                    <li key={l.id} className="text-sm text-muted-foreground">
+                      <Link href={`/leads/${l.id}`} className="hover:underline">{l.businessName}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

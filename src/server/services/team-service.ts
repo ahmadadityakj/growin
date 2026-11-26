@@ -57,6 +57,18 @@ export class TeamService {
     return rows;
   }
 
+  /** User yang bisa di-assign lead: owner + semua member. */
+  static async assignableUsers(ownerId: string) {
+    const [members, owner] = await Promise.all([
+      this.listMembers(ownerId),
+      db.query.users.findFirst({ where: eq(users.id, ownerId) }),
+    ]);
+    return [
+      ...(owner ? [{ id: owner.id, name: owner.name, email: owner.email }] : []),
+      ...members.map((m) => ({ id: m.memberId, name: m.name, email: m.email })),
+    ];
+  }
+
   static async listInvites(ownerId: string) {
     return db
       .select()

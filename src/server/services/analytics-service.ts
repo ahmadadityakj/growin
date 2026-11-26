@@ -2,7 +2,7 @@ import {and, count, desc, eq, isNull, sql, sum, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
 import { TeamService } from "@/server/services/team-service";
 import {
-  leads, campaigns, campaignLeads, outreachMessages, messageReplies, aiGenerations, integrationLogs,
+  leads, campaigns, campaignLeads, outreachMessages, messageReplies, aiGenerations, integrationLogs, users,
 } from "@/server/db/schema";
 
 export class AnalyticsService {
@@ -129,6 +129,67 @@ export class AnalyticsService {
         )
       )
       .groupBy(integrationLogs.event, integrationLogs.status)
+      .orderBy(desc(count()));
+  }
+
+  /** Performa per anggota tim: pesan terkirim, balasan, closing, nilai deal. */
+  static async memberPerformance(teamIds: string[]) {
+    if (!teamIds.length) return [];
+    const [sent, replied, converted, userRows] = await Promise.all([
+      db
+        .select({ uid: outreachMessages.createdById, c: count() })
+        .from(outreachMessages)
+        .where(and(
+          inArray(outreachMessages.createdById, teamIds),
+          inArray(outreachMessages.status, ["sent", "delivered", "replied"])
+        ))
+        .groupBy(outreachMessages.createdById),
+      db
+        .select({ uid: outreachMessages.createdById, c: count() })
+        .from(outreachMessages)
+        .where(and(inArray(outreachMessages.createdById, teamIds), eq(outreachMessages.status, "replied")))
+        .groupBy(outreachMessages.createdById),
+      db
+        .select({
+          uid: leads.assignedUserId,
+          c: count(),
+          v: sql<number>`coalesce(sum(${leads.dealValue}),0)::int`,
+        })
+        .from(leads)
+        .where(and(
+          inArray(leads.assignedUserId, teamIds),
+          eq(leads.status, "converted"),
+          isNull(leads.deletedAt)
+        ))
+        .groupBy(leads.assignedUserId),
+      db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, teamIds)),
+    ]);
+
+    const sentMap = new Map(sent.map((r) => [r.uid, r.c]));
+    const repMap = new Map(replied.map((r) => [r.uid, r.c]));
+    const convMap = new Map(converted.map((r) => [r.uid, { c: r.c, v: r.v }]));
+    return userRows.map((u) => ({
+      id: u.id,
+      name: u.name ?? u.email,
+      sent: sentMap.get(u.id) ?? 0,
+      replied: repMap.get(u.id) ?? 0,
+      converted: convMap.get(u.id)?.c ?? 0,
+      dealValue: convMap.get(u.id)?.v ?? 0,
+    }));
+  }
+
+  /** Revenue attribution per sumber lead. */
+  static async revenueBySource(ownerId?: string) {
+    return db
+      .select({
+        source: leads.source,
+        total: count(),
+        converted: sql<number>`count(*) filter (where ${leads.status} = 'converted')::int`,
+        dealValue: sql<number>`coalesce(sum(${leads.dealValue}) filter (where ${leads.status} = 'converted'),0)::int`,
+      })
+      .from(leads)
+      .where(and(isNull(leads.deletedAt), ownerId ? eq(leads.ownerId, ownerId) : undefined))
+      .groupBy(leads.source)
       .orderBy(desc(count()));
   }
 }

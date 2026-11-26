@@ -1,4 +1,5 @@
 import { AnalyticsService } from "@/server/services/analytics-service";
+import { TeamService } from "@/server/services/team-service";
 import { requireUserId, requireActorId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -28,6 +29,14 @@ const AI_TYPE_LABELS: Record<string, string> = {
   summary: "Ringkasan",
 };
 
+const SOURCE_LABELS: Record<string, string> = {
+  manual: "Manual",
+  csv_import: "Impor CSV",
+  ai_research: "Riset AI",
+  referral: "Referral",
+  other: "Lainnya",
+};
+
 const MSG_LABELS: Record<string, string> = {
   draft: "Draft",
   pending_approval: "Menunggu approval",
@@ -45,7 +54,8 @@ const MSG_LABELS: Record<string, string> = {
 export default async function ReportsPage() {
   const uid = await requireUserId();
   const actor = await requireActorId();
-  const [kpi, byStatus, byCampaign, outreach, perMonth, aiUsage, searchUsage] = await Promise.all([
+  const teamIds = await TeamService.teamIdsOf(actor);
+  const [kpi, byStatus, byCampaign, outreach, perMonth, aiUsage, searchUsage, memberPerf, bySource] = await Promise.all([
     AnalyticsService.kpi(actor),
     AnalyticsService.leadsByStatus(uid),
     AnalyticsService.leadsByCampaign(actor),
@@ -53,6 +63,8 @@ export default async function ReportsPage() {
     AnalyticsService.leadsPerMonth(uid),
     AnalyticsService.aiUsage(actor),
     AnalyticsService.searchUsage(uid),
+    AnalyticsService.memberPerformance(teamIds),
+    AnalyticsService.revenueBySource(uid),
   ]);
 
   const statusData = byStatus.map((r: { status: string; count: number }) => ({
@@ -100,6 +112,80 @@ export default async function ReportsPage() {
         msgStatusData={msgStatusData}
         monthData={perMonth}
       />
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Performa Tim</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Aktivitas outreach per anggota workspace. Closing dihitung dari lead yang di-assign ke member tersebut.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs text-muted-foreground">
+                  <th className="pb-2 font-medium">Anggota</th>
+                  <th className="pb-2 text-right font-medium">Terkirim</th>
+                  <th className="pb-2 text-right font-medium">Balasan</th>
+                  <th className="pb-2 text-right font-medium">Closing</th>
+                  <th className="pb-2 text-right font-medium">Nilai Deal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {memberPerf.map((m) => (
+                  <tr key={m.id} className="border-b last:border-0">
+                    <td className="py-2 font-medium">{m.name}</td>
+                    <td className="py-2 text-right">{m.sent}</td>
+                    <td className="py-2 text-right">{m.replied}</td>
+                    <td className="py-2 text-right">{m.converted}</td>
+                    <td className="py-2 text-right">
+                      {m.dealValue > 0 ? `Rp${m.dealValue.toLocaleString("id-ID")}` : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Revenue per Sumber Leads</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Sumber mana yang paling banyak jadi deal — jawaban atas "channel mana yang worth it".
+            </p>
+          </CardHeader>
+          <CardContent>
+            {bySource.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Belum ada leads.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs text-muted-foreground">
+                    <th className="pb-2 font-medium">Sumber</th>
+                    <th className="pb-2 text-right font-medium">Leads</th>
+                    <th className="pb-2 text-right font-medium">Converted</th>
+                    <th className="pb-2 text-right font-medium">Nilai Deal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bySource.map((r) => (
+                    <tr key={r.source} className="border-b last:border-0">
+                      <td className="py-2 font-medium">{SOURCE_LABELS[r.source] ?? r.source}</td>
+                      <td className="py-2 text-right">{r.total}</td>
+                      <td className="py-2 text-right">{r.converted}</td>
+                      <td className="py-2 text-right">
+                        {r.dealValue > 0 ? `Rp${r.dealValue.toLocaleString("id-ID")}` : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Pemakaian AI */}
       <div className="mt-6">

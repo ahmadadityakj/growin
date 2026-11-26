@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus, Users, Upload, Download, UserCheck } from "lucide-react";
 import { LeadService } from "@/server/services/lead-service";
 import { requireUserId, requireActorId } from "@/lib/session";
+import { TeamService } from "@/server/services/team-service";
 import { CampaignService } from "@/server/services/campaign-service";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -24,7 +25,7 @@ export default async function LeadsPage({
   const uid = await requireUserId();
   const actor = await requireActorId();
 
-  const [result, allTags, campaignRows] = await Promise.all([
+  const [result, allTags, campaignRows, assignees] = await Promise.all([
     LeadService.list({
       search: sp.q,
       status: sp.status,
@@ -32,12 +33,14 @@ export default async function LeadsPage({
       city: sp.city,
       campaignId: sp.campaign,
       tagId: sp.tag,
+      assignedUserId: sp.assigned === "me" ? actor : sp.assigned,
       page,
       pageSize: 20,
       ownerId: uid,
     }),
     LeadService.listTags(uid),
     CampaignService.list({ userId: actor }),
+    TeamService.assignableUsers(uid),
   ]);
 
   function pageUrl(p: number) {
@@ -115,6 +118,19 @@ export default async function LeadsPage({
             <option key={campaign.id} value={campaign.id}>{campaign.name}</option>
           ))}
         </select>
+        {assignees.length > 1 && (
+          <select
+            name="assigned"
+            defaultValue={sp.assigned ?? ""}
+            className="h-8 rounded-lg border border-input bg-background px-2 text-sm"
+          >
+            <option value="">Ditugaskan: semua</option>
+            <option value="me">Milik saya</option>
+            {assignees.map((m) => (
+              <option key={m.id} value={m.id}>{m.name ?? m.email}</option>
+            ))}
+          </select>
+        )}
         <select
           name="tag"
           defaultValue={sp.tag ?? ""}

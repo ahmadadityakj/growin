@@ -18,7 +18,7 @@ export function TrialBanner({ daysLeft }: { daysLeft: number }) {
         Batas: {TRIAL_LIMITS.maxLeads} leads · {TRIAL_LIMITS.maxProducts} produk ·{" "}
         {TRIAL_LIMITS.researchJobsPerMonth} riset/bulan (maks {TRIAL_LIMITS.researchTargetMax}/job)
       </span>
-      <Link href="/#harga" className="font-semibold underline underline-offset-2">
+      <Link href="/billing" className="font-semibold underline underline-offset-2">
         Upgrade
       </Link>
     </div>

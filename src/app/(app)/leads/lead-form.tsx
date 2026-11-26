@@ -17,14 +17,17 @@ type Lead = LeadInput & { id: string };
 
 export function LeadForm({
   lead,
+  assignees = [],
   onSubmit,
 }: {
   lead?: Lead;
+  assignees?: { id: string; name: string | null; email: string }[];
   onSubmit: (input: LeadInput) => Promise<void>;
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState(lead?.status ?? "new");
+  const [assignedUserId, setAssignedUserId] = useState(lead?.assignedUserId ?? "");
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -51,6 +54,7 @@ export function LeadForm({
       dealValue: fd.get("dealValue") ? Number(fd.get("dealValue")) : null,
       lostReason: g("lostReason"),
       nextFollowUpAt: g("nextFollowUpAt"),
+      assignedUserId: assignedUserId || null,
     };
     startTransition(async () => {
       try {
@@ -148,6 +152,20 @@ export function LeadForm({
             <Label htmlFor="nextFollowUpAt">Follow-up Berikutnya</Label>
             <Input id="nextFollowUpAt" name="nextFollowUpAt" type="date" defaultValue={f("nextFollowUpAt").slice(0, 10)} />
           </div>
+          {assignees.length > 1 && (
+            <div className="space-y-2">
+              <Label>Ditugaskan ke</Label>
+              <Select value={assignedUserId} onValueChange={(v) => setAssignedUserId(v === "none" ? "" : (v ?? ""))}>
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {assignees.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>{m.name ?? m.email}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-2 md:col-span-3">
             <Label htmlFor="researchNotes">Catatan Riset</Label>
             <Textarea id="researchNotes" name="researchNotes" rows={3} defaultValue={f("researchNotes")} />

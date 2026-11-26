@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { LeadService } from "@/server/services/lead-service";
+import { TeamService } from "@/server/services/team-service";
 import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { LeadForm } from "../../lead-form";
@@ -14,6 +15,7 @@ export default async function EditLeadPage({
   const uid = await requireUserId();
   const lead = await LeadService.getById(id, uid);
   if (!lead) notFound();
+  const assignees = await TeamService.assignableUsers(uid);
 
   const bound = updateLead.bind(null, id);
 
@@ -21,6 +23,7 @@ export default async function EditLeadPage({
     <div>
       <PageHeader title={`Edit: ${lead.businessName}`} />
       <LeadForm
+        assignees={assignees}
         lead={{
           id: lead.id,
           businessName: lead.businessName,

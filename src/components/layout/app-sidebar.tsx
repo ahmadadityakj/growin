@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CreditCard,
   LayoutDashboard,
   Sparkles,
   Package,
@@ -61,18 +62,25 @@ const menuGroups = [
     items: [
       { href: "/reports", icon: BarChart3, label: t.nav.reports },
       { href: "/integrations", icon: Plug, label: t.nav.integrations },
+      { href: "/billing", icon: CreditCard, label: "Billing" },
       { href: "/settings", icon: Settings, label: t.nav.settings },
     ],
   },
 ];
 
-export function AppSidebar({ isOwner = true }: { isOwner?: boolean }) {
+export function AppSidebar({
+  isOwner = true,
+  replyCount = 0,
+}: {
+  isOwner?: boolean;
+  replyCount?: number;
+}) {
   const pathname = usePathname();
   const groups = isOwner
     ? menuGroups
     : menuGroups.map((g) => ({
         ...g,
-        items: g.items.filter((i) => i.href !== "/integrations"),
+        items: g.items.filter((i) => i.href !== "/integrations" && i.href !== "/billing"),
       }));
 
   return (
@@ -115,6 +123,11 @@ export function AppSidebar({ isOwner = true }: { isOwner?: boolean }) {
                               className={`h-4 w-4 ${active ? "text-emerald-600" : ""}`}
                             />
                             <span>{item.label}</span>
+                            {item.href === "/outreach" && replyCount > 0 && (
+                              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 text-[10px] font-bold text-white">
+                                {replyCount > 99 ? "99+" : replyCount}
+                              </span>
+                            )}
                           </Link>
                         }
                       />

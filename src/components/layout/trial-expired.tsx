@@ -17,7 +17,7 @@ export function TrialExpired() {
           memakai Growin tanpa batas trial.
         </p>
         <div className="mt-6 flex flex-col gap-2">
-          <Button render={<a href="/#harga">Lihat Paket</a>} />
+          <Button render={<a href="/billing">Lihat Paket</a>} />
           <Button
             variant="outline"
             onClick={() => signOut({ callbackUrl: "/login" })}

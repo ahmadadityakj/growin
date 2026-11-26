@@ -49,6 +49,7 @@ export type LeadListParams = {
   city?: string;
   campaignId?: string;
   tagId?: string;
+  assignedUserId?: string;
   page?: number;
   pageSize?: number;
 };
@@ -71,6 +72,7 @@ export class LeadService {
     if (params.status) conds.push(eq(leads.status, params.status as LeadStatus));
     if (params.industry) conds.push(ilike(leads.industry, `%${params.industry}%`));
     if (params.city) conds.push(ilike(leads.city, `%${params.city}%`));
+    if (params.assignedUserId) conds.push(eq(leads.assignedUserId, params.assignedUserId));
     if (params.campaignId) {
       conds.push(
         sql`exists (select 1 from ${campaignLeads} cl where cl.lead_id = ${leads.id} and cl.campaign_id = ${params.campaignId})`

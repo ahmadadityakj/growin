@@ -18,6 +18,7 @@ const envSchema = z.object({
   TAVILY_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().optional(),
+  BILLING_BANK_INFO: z.string().optional(),
   FONNTE_TOKEN: z.string().optional(),
   N8N_WEBHOOK_URL: z.string().optional(),
   N8N_API_KEY: z.string().optional(),

@@ -26,6 +26,13 @@ Pekerjaan yang disadari perlu dilakukan tapi belum diimplementasi. Urutkan per p
 
 ## Fitur
 
+- ~~assignedTo di lead + filter "leads saya"~~ ✅
+- ~~Agenda harian dashboard + badge balasan di sidebar~~ ✅
+- ~~Report per member + revenue per sumber~~ ✅
+- Notifikasi balasan real (in-app sudah via badge; email/WA push belum).
+- Target/goals tracking sederhana.
+- Webhook intake leads (form website, FB lead ads) + public API.
+- Dedup leads antar sumber (riset sudah ada; import/manual belum).
 - Ubah password di Settings (belum ada; password hanya bisa diubah langsung di DB).
 - Email verification flow.
 - Password reset/forgot password.
