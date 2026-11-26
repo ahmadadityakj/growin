@@ -69,9 +69,7 @@ const EMAIL_OPTIONS: SlotOption[] = [
   { value: "smtp", label: "SMTP umum", hint: "Gmail, SES, Brevo, Mailgun, Zoho — pakai kredensial SMTP provider Anda" },
 ];
 
-const STANDALONE: { key: ProviderKey; title: string; desc: string }[] = [
-  { key: "n8n", title: "n8n", desc: "Workflow automation (opsional)" },
-];
+const STANDALONE: { key: ProviderKey; title: string; desc: string }[] = [];
 
 export default async function IntegrationsPage() {
   const uid = await requireUserId();
