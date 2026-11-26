@@ -15,7 +15,7 @@ type Message = typeof outreachMessages.$inferSelect;
 export function QueueButton() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [result, setResult] = useState<{ queued: number; deferred: number } | null>(null);
+  const [result, setResult] = useState<{ queued: number; deferred: number; paused: number } | null>(null);
   return (
     <Button
       variant="outline"
@@ -31,9 +31,13 @@ export function QueueButton() {
       {pending
         ? "Mengantrekan..."
         : result != null
-          ? result.deferred > 0
-            ? `${result.queued} diantrekan (${result.deferred} dijadwalkan besok+)`
-            : `${result.queued} diantrekan`
+          ? [
+              `${result.queued} diantrekan`,
+              result.deferred > 0 ? `${result.deferred} dijadwalkan besok+` : null,
+              result.paused > 0 ? `${result.paused} ditahan (rem opt-out)` : null,
+            ]
+              .filter(Boolean)
+              .join(", ")
           : "Kirim yang Disetujui"}
     </Button>
   );

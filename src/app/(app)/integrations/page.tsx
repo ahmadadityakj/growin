@@ -17,7 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const PROVIDER_NOTES: Partial<Record<ProviderKey, string>> = {
   fonnte:
-    "Kirim dari nomor WA pribadi Anda via Fonnte — jumlah harian terbatas dan nomor berisiko diblokir WA kalau terlalu agresif. Jaga volume rendah (±20–30 pesan/hari) dan personalisasi tiap pesan.",
+    "Kirim dari nomor WA pribadi Anda via Fonnte — gateway tidak resmi, jadi risiko blokir nomor selalu ada. Growin mengirim bertahap (mulai 15/hari, naik pelan, jeda acak, rem darurat otomatis), tapi tidak menghilangkan risiko. Untuk nomor bisnis penting, pakai WhatsApp Business API.",
   whatsapp_business:
     "Channel resmi Meta — lebih aman untuk volume besar dan pesan template. Perlu Meta Business account, nomor khusus, dan persetujuan template pesan.",
   openai:
@@ -33,7 +33,7 @@ const PROVIDER_NOTES: Partial<Record<ProviderKey, string>> = {
   brave: "Search API untuk riset pasar — gratis ±2.000 query/bln di paket Brave Anda.",
   tavily: "Search API untuk riset pasar — gratis ±1.000 query/bln di paket Tavily Anda.",
   wablas:
-    "Gateway WA Indonesia mirip Fonnte — kirim dari nomor pribadi, batasan volume harian yang sama berlaku. Domain API tiap akun berbeda (lihat di dashboard Wablas).",
+    "Gateway WA Indonesia mirip Fonnte — kirim dari nomor pribadi, risiko blokir yang sama berlaku. Growin sudah membatasi otomatis (warm-up + jeda acak), tapi tetap tidak resmi. Domain API tiap akun berbeda (lihat di dashboard Wablas).",
   twilio:
     "Channel WA internasional resmi — sandbox gratis untuk coba, produksi perlu nomor approved + template pesan. Cocok kalau target pasar luar negeri.",
   resend:

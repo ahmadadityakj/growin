@@ -68,7 +68,7 @@ export default async function MessagesPage({
       />
       <OutreachNav />
       <ChannelStatus scopeId={scopeId} />
-      <SendQuota teamIds={teamIds} />
+      <SendQuota teamIds={teamIds} scopeId={scopeId} />
 
       {rows.length === 0 ? (
         <EmptyState
