@@ -50,6 +50,13 @@
       "when": 1795657660906,
       "tag": "0006_ai-source",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795658117341,
+      "tag": "0007_ai-providers",
+      "breakpoints": true
     }
   ]
 }

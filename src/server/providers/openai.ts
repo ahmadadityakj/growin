@@ -1,16 +1,56 @@
 import OpenAI from "openai";
 import { env } from "@/lib/env";
+import type { ProviderKey } from "../services/integration-service";
+
+/** Provider AI yang pakai OpenAI-compatible API — cukup beda baseURL + default model. */
+export const AI_PROVIDERS: Record<string, {
+  label: string;
+  baseURL?: string;
+  defaultExtraction: string;
+  defaultGeneration: string;
+}> = {
+  openai: {
+    label: "OpenAI",
+    defaultExtraction: env.OPENAI_MODEL_EXTRACTION,
+    defaultGeneration: env.OPENAI_MODEL_GENERATION,
+  },
+  gemini: {
+    label: "Google Gemini",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    defaultExtraction: "gemini-2.0-flash",
+    defaultGeneration: "gemini-2.0-flash",
+  },
+  openrouter: {
+    label: "OpenRouter",
+    baseURL: "https://openrouter.ai/api/v1",
+    defaultExtraction: "google/gemini-2.0-flash-001",
+    defaultGeneration: "meta-llama/llama-3.3-70b-instruct",
+  },
+  deepseek: {
+    label: "DeepSeek",
+    baseURL: "https://api.deepseek.com",
+    defaultExtraction: "deepseek-chat",
+    defaultGeneration: "deepseek-chat",
+  },
+  groq: {
+    label: "Groq",
+    baseURL: "https://api.groq.com/openai/v1",
+    defaultExtraction: "llama-3.3-70b-versatile",
+    defaultGeneration: "llama-3.3-70b-versatile",
+  },
+};
 
 let client: OpenAI | null = null;
 const clientByKey = new Map<string, OpenAI>();
 
-function clientFor(apiKey: string): OpenAI {
-  if (apiKey === env.OPENAI_API_KEY && client) return client;
-  let c = clientByKey.get(apiKey);
+function clientFor(apiKey: string, baseURL?: string): OpenAI {
+  const mapKey = `${baseURL ?? ""}|${apiKey}`;
+  if (!baseURL && apiKey === env.OPENAI_API_KEY && client) return client;
+  let c = clientByKey.get(mapKey);
   if (!c) {
-    c = new OpenAI({ apiKey });
-    clientByKey.set(apiKey, c);
-    if (apiKey === env.OPENAI_API_KEY) client = c;
+    c = new OpenAI({ apiKey, baseURL });
+    clientByKey.set(mapKey, c);
+    if (!baseURL && apiKey === env.OPENAI_API_KEY) client = c;
   }
   return c;
 }
@@ -35,24 +75,31 @@ export interface AIConfig {
   modelGeneration: string;
   /** "workspace" = BYOK user; "platform" = key bawaan Growin. */
   source: "workspace" | "platform";
+  /** Provider BYOK yang dipakai (hanya bila source = workspace). */
+  provider?: ProviderKey;
 }
 
 /**
  * AI config untuk user tertentu:
- * BYOK workspace (integrations.openai) dulu, fallback ke platform (env).
+ * BYOK workspace (provider AI yang dipilih di slot: openai/gemini/openrouter/deepseek/groq)
+ * dulu, fallback ke platform (env OpenAI).
  */
 export async function getAIConfig(userId?: string): Promise<AIConfig | null> {
   if (userId) {
     try {
       const { IntegrationService } = await import("../services/integration-service");
-      const creds = await IntegrationService.getActiveCredentials("openai", userId);
-      if (creds.apiKey) {
-        return {
-          client: clientFor(creds.apiKey),
-          modelExtraction: creds.modelExtraction || env.OPENAI_MODEL_EXTRACTION,
-          modelGeneration: creds.modelGeneration || env.OPENAI_MODEL_GENERATION,
-          source: "workspace",
-        };
+      for (const key of Object.keys(AI_PROVIDERS) as ProviderKey[]) {
+        const creds = await IntegrationService.getActiveCredentials(key, userId);
+        if (creds.apiKey) {
+          const spec = AI_PROVIDERS[key];
+          return {
+            client: clientFor(creds.apiKey, spec.baseURL),
+            modelExtraction: creds.modelExtraction || spec.defaultExtraction,
+            modelGeneration: creds.modelGeneration || spec.defaultGeneration,
+            source: "workspace",
+            provider: key,
+          };
+        }
       }
     } catch {
       // lookup gagal → lanjut ke platform
@@ -130,7 +177,7 @@ export async function withAI<T>(
     // catat di row integrasi supaya terlihat di UI
     try {
       const { IntegrationService } = await import("../services/integration-service");
-      await IntegrationService.recordRuntimeError("openai", reason, userId, { fellBack: true });
+      await IntegrationService.recordRuntimeError(config.provider ?? "openai", reason, userId, { fellBack: true });
     } catch {
       // pencatatan gagal — jangan blokir fallback
     }

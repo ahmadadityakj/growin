@@ -1,4 +1,4 @@
-import { IntegrationService, PROVIDER_FIELDS, type ProviderKey } from "@/server/services/integration-service";
+import { IntegrationService, PROVIDER_FIELDS, AI_SLOT_PROVIDERS, type ProviderKey } from "@/server/services/integration-service";
 import { env } from "@/lib/env";
 import { requireUserId, requireActorId } from "@/lib/session";
 import { TeamService } from "@/server/services/team-service";
@@ -22,13 +22,25 @@ const PROVIDER_NOTES: Partial<Record<ProviderKey, string>> = {
     "Channel resmi Meta — lebih aman untuk volume besar dan pesan template. Perlu Meta Business account, nomor khusus, dan persetujuan template pesan.",
   openai:
     "Key Anda dipakai untuk riset, scoring, dan generate pesan. Limit & biaya mengikuti paket OpenAI Anda. Jika key limit/error, sistem fallback ke platform selama kuota paket masih ada.",
+  gemini:
+    "Free tier Gemini cukup besar untuk pemakaian harian. Ambil key gratis di aistudio.google.com.",
+  openrouter:
+    "Satu key untuk banyak model — bisa pilih model murah (Gemini Flash, Llama) atau premium (Claude, GPT). Bayar per token sesuai model.",
+  deepseek:
+    "Harga per token termurah di kelasnya. Cocok untuk volume riset tinggi.",
+  groq:
+    "Inferensi Llama sangat cepat dengan free tier — cocok untuk generate pesan.",
   brave: "Search API untuk riset pasar — gratis ±2.000 query/bln di paket Brave Anda.",
   tavily: "Search API untuk riset pasar — gratis ±1.000 query/bln di paket Tavily Anda.",
 };
 
 const AI_OPTIONS: SlotOption[] = [
   { value: "platform", label: "Bawaan platform", hint: "Langsung jalan — kuota mengikuti paket Growin Anda" },
-  { value: "openai", label: "API key OpenAI sendiri", hint: "Limit & biaya mengikuti paket OpenAI Anda" },
+  { value: "openai", label: "OpenAI", hint: "GPT-4o mini — andal, bayar per token" },
+  { value: "gemini", label: "Google Gemini", hint: "Free tier besar (±1.500 req/hari)" },
+  { value: "openrouter", label: "OpenRouter", hint: "Satu key akses ratusan model (Llama, Claude, Gemini...)" },
+  { value: "deepseek", label: "DeepSeek", hint: "Sangat murah, kualitas bagus" },
+  { value: "groq", label: "Groq", hint: "Inferensi super cepat, free tier" },
 ];
 
 const SEARCH_OPTIONS: SlotOption[] = [
@@ -105,8 +117,14 @@ export default async function IntegrationsPage() {
           title="Mesin AI"
           description="Untuk riset pasar, scoring lead, dan generate pesan."
           options={AI_OPTIONS}
-          selected={slotSelected(["openai"], true)}
-          providers={{ openai: cardData("openai") }}
+          selected={slotSelected(AI_SLOT_PROVIDERS, true)}
+          providers={{
+            openai: cardData("openai"),
+            gemini: cardData("gemini"),
+            openrouter: cardData("openrouter"),
+            deepseek: cardData("deepseek"),
+            groq: cardData("groq"),
+          }}
           platformNote="Menggunakan AI bawaan Growin — kuota mengikuti paket Anda."
           isOwner={isOwner}
         />

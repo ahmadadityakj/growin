@@ -5,7 +5,12 @@ import { encrypt, decrypt } from "@/lib/crypto";
 import { env } from "@/lib/env";
 
 export type ProviderKey =
-  | "resend" | "fonnte" | "openai" | "brave" | "tavily" | "n8n" | "whatsapp_business";
+  | "resend" | "fonnte"
+  | "openai" | "gemini" | "openrouter" | "deepseek" | "groq"
+  | "brave" | "tavily" | "n8n" | "whatsapp_business";
+
+/** Provider yang masuk slot Mesin AI (OpenAI-compatible API). */
+export const AI_SLOT_PROVIDERS: ProviderKey[] = ["openai", "gemini", "openrouter", "deepseek", "groq"];
 
 /** Field credential per provider; dipakai UI form & service. */
 export const PROVIDER_FIELDS: Record<ProviderKey, { key: string; label: string; secret: boolean }[]> = {
@@ -21,6 +26,26 @@ export const PROVIDER_FIELDS: Record<ProviderKey, { key: string; label: string; 
     { key: "apiKey", label: "API Key", secret: true },
     { key: "modelExtraction", label: "Model Ekstraksi", secret: false },
     { key: "modelGeneration", label: "Model Generasi", secret: false },
+  ],
+  gemini: [
+    { key: "apiKey", label: "API Key (aistudio.google.com)", secret: true },
+    { key: "modelExtraction", label: "Model Ekstraksi (default: gemini-2.0-flash)", secret: false },
+    { key: "modelGeneration", label: "Model Generasi (default: gemini-2.0-flash)", secret: false },
+  ],
+  openrouter: [
+    { key: "apiKey", label: "API Key (openrouter.ai)", secret: true },
+    { key: "modelExtraction", label: "Model Ekstraksi (mis: google/gemini-2.0-flash-001)", secret: false },
+    { key: "modelGeneration", label: "Model Generasi (mis: meta-llama/llama-3.3-70b-instruct)", secret: false },
+  ],
+  deepseek: [
+    { key: "apiKey", label: "API Key (platform.deepseek.com)", secret: true },
+    { key: "modelExtraction", label: "Model Ekstraksi (default: deepseek-chat)", secret: false },
+    { key: "modelGeneration", label: "Model Generasi (default: deepseek-chat)", secret: false },
+  ],
+  groq: [
+    { key: "apiKey", label: "API Key (console.groq.com)", secret: true },
+    { key: "modelExtraction", label: "Model Ekstraksi (default: llama-3.3-70b-versatile)", secret: false },
+    { key: "modelGeneration", label: "Model Generasi (default: llama-3.3-70b-versatile)", secret: false },
   ],
   brave: [{ key: "apiKey", label: "API Key", secret: true }],
   tavily: [{ key: "apiKey", label: "API Key", secret: true }],
@@ -39,7 +64,7 @@ export const PROVIDER_FIELDS: Record<ProviderKey, { key: string; label: string; 
 export type SlotKey = "ai" | "search" | "whatsapp" | "email";
 
 export const SLOT_PROVIDERS: Record<SlotKey, ProviderKey[]> = {
-  ai: ["openai"],
+  ai: AI_SLOT_PROVIDERS,
   search: ["brave", "tavily"],
   whatsapp: ["fonnte", "whatsapp_business"],
   email: ["resend"],
@@ -277,15 +302,22 @@ export class IntegrationService {
             ? { ok: true, detail: `WA Business OK${data.display_phone_number ? ` · ${data.display_phone_number}` : ""}` }
             : { ok: false, detail: `WA Business: ${data?.error?.message ?? res.status}` };
         }
-        case "openai": {
-          const key = (await this.getCredentials("openai", ownerId)).apiKey || env.OPENAI_API_KEY;
+        case "openai":
+        case "gemini":
+        case "openrouter":
+        case "deepseek":
+        case "groq": {
+          const { AI_PROVIDERS } = await import("../providers/openai");
+          const spec = AI_PROVIDERS[provider];
+          const key = (await this.getCredentials(provider, ownerId)).apiKey
+            || (provider === "openai" ? env.OPENAI_API_KEY : undefined);
           if (!key) return { ok: false, detail: "API key kosong" };
-          const res = await fetch("https://api.openai.com/v1/models", {
+          const res = await fetch(`${spec.baseURL ?? "https://api.openai.com/v1"}/models`, {
             headers: { Authorization: `Bearer ${key}` },
           });
           return res.ok
-            ? { ok: true, detail: "OpenAI OK" }
-            : { ok: false, detail: `OpenAI error ${res.status}` };
+            ? { ok: true, detail: `${spec.label} OK` }
+            : { ok: false, detail: `${spec.label} error ${res.status}` };
         }
         case "brave":
         case "tavily": {
