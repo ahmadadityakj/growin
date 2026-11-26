@@ -32,6 +32,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { t } from "@/lib/i18n";
+import { SidebarSprout } from "@/components/illustrations/sidebar-sprout";
 
 const menuGroups = [
   {
@@ -142,10 +143,12 @@ export function AppSidebar({
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/60 p-4">
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
+      <SidebarFooter className="relative overflow-hidden border-t border-sidebar-border/60 px-4 pb-0 pt-4">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-emerald-100/70 via-emerald-50/40 to-transparent dark:from-emerald-950/60 dark:via-emerald-950/20" />
+        <p className="relative text-[11px] leading-relaxed text-muted-foreground">
           {t.app.tagline}
         </p>
+        <SidebarSprout className="relative -mx-4 mt-1 h-[72px] w-[calc(100%+2rem)] text-emerald-300/80 dark:text-emerald-800/80" />
       </SidebarFooter>
     </Sidebar>
   );
