@@ -30,16 +30,16 @@ export function AppHeader({
     .join("");
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
       <SidebarTrigger />
       <Separator orientation="vertical" className="h-6" />
       <div className="flex-1" />
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="ghost" className="flex items-center gap-2 px-2">
+            <Button variant="ghost" className="flex h-10 items-center gap-2 rounded-full px-1.5 pr-3 hover:bg-emerald-50">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-semibold text-white">
                   {initials || <User className="h-4 w-4" />}
                 </AvatarFallback>
               </Avatar>
