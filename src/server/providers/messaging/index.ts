@@ -1,5 +1,3 @@
-import { env } from "@/lib/env";
-
 export interface SendResult {
   providerMessageId?: string;
   detail?: string;
@@ -10,26 +8,32 @@ export interface MessagingProvider {
   send(input: { recipient: string; subject?: string; body: string }): Promise<SendResult>;
 }
 
-/** Pilih messaging provider per channel; credential dari integrations table dulu, fallback env. */
+/** Pilih messaging provider per channel; credential per-workspace dari integrations table. */
 export async function getMessagingProvider(channel: "email" | "whatsapp", ownerId?: string): Promise<MessagingProvider> {
   const { IntegrationService } = await import("../../services/integration-service");
 
   if (channel === "email") {
     const { ResendProvider } = await import("./resend");
     const creds = await IntegrationService.getCredentials("resend", ownerId);
-    const apiKey = creds.apiKey || env.RESEND_API_KEY;
-    const from = creds.fromEmail || env.RESEND_FROM_EMAIL || "Growin <onboarding@resend.dev>";
+    const apiKey = creds.apiKey;
+    const from = creds.fromEmail || "Growin <onboarding@resend.dev>";
     if (!apiKey) {
-      throw new Error("Resend API key belum diset. Isi di Integrations atau RESEND_API_KEY di .env");
+      throw new Error("Resend belum dikonfigurasi untuk workspace ini. Isi di Integrations.");
     }
     return new ResendProvider(apiKey, from);
   }
 
-  const { FonnteProvider } = await import("./fonnte");
-  const creds = await IntegrationService.getCredentials("fonnte", ownerId);
-  const token = creds.token || env.FONNTE_TOKEN;
-  if (!token) {
-    throw new Error("Fonnte token belum diset. Isi di Integrations atau FONNTE_TOKEN di .env");
+  const fonnte = await IntegrationService.getCredentials("fonnte", ownerId);
+  if (fonnte.token) {
+    const { FonnteProvider } = await import("./fonnte");
+    return new FonnteProvider(fonnte.token);
   }
-  return new FonnteProvider(token);
+  const wab = await IntegrationService.getCredentials("whatsapp_business", ownerId);
+  if (wab.accessToken && wab.phoneNumberId) {
+    const { WhatsAppBusinessProvider } = await import("./whatsapp-business");
+    return new WhatsAppBusinessProvider(wab.accessToken, wab.phoneNumberId);
+  }
+  throw new Error(
+    "Belum ada provider WhatsApp terkonfigurasi. Isi Fonnte atau WhatsApp Business API di Integrations."
+  );
 }

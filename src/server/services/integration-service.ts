@@ -134,7 +134,7 @@ export class IntegrationService {
         case "resend": {
           const { ResendProvider } = await import("../providers/messaging/resend");
           const creds = await this.getCredentials("resend", ownerId);
-          const key = creds.apiKey || env.RESEND_API_KEY;
+          const key = creds.apiKey;
           if (!key) return { ok: false, detail: "API key kosong" };
           const res = await fetch("https://api.resend.com/domains", {
             headers: { Authorization: `Bearer ${key}` },
@@ -145,7 +145,7 @@ export class IntegrationService {
         }
         case "fonnte": {
           const creds = await this.getCredentials("fonnte", ownerId);
-          const token = creds.token || env.FONNTE_TOKEN;
+          const token = creds.token;
           if (!token) return { ok: false, detail: "Token kosong" };
           const res = await fetch("https://api.fonnte.com/device", {
             method: "POST",
@@ -155,6 +155,20 @@ export class IntegrationService {
           return data.status || res.ok
             ? { ok: true, detail: `Fonnte OK${data.device ? ` · ${data.device}` : ""}` }
             : { ok: false, detail: `Fonnte: ${data.reason ?? res.status}` };
+        }
+        case "whatsapp_business": {
+          const creds = await this.getCredentials("whatsapp_business", ownerId);
+          if (!creds.accessToken || !creds.phoneNumberId) {
+            return { ok: false, detail: "Access token / phone number ID kosong" };
+          }
+          const res = await fetch(
+            `https://graph.facebook.com/v21.0/${creds.phoneNumberId}`,
+            { headers: { Authorization: `Bearer ${creds.accessToken}` } }
+          );
+          const data = await res.json().catch(() => ({}));
+          return res.ok
+            ? { ok: true, detail: `WA Business OK${data.display_phone_number ? ` · ${data.display_phone_number}` : ""}` }
+            : { ok: false, detail: `WA Business: ${data?.error?.message ?? res.status}` };
         }
         case "openai": {
           const key = (await this.getCredentials("openai", ownerId)).apiKey || env.OPENAI_API_KEY;

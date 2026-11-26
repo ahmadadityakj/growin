@@ -4,7 +4,7 @@ import { TeamService } from "@/server/services/team-service";
 import {
   leads, products, productKnowledge, outreachTemplates, aiGenerations, campaigns,
 } from "@/server/db/schema";
-import { getOpenAI, hasOpenAI, MODEL_GENERATION, parseModelJson } from "@/server/providers/openai";
+import { getAIConfig, parseModelJson } from "@/server/providers/openai";
 import { z } from "zod";
 
 export const generateInputSchema = z.object({
@@ -45,7 +45,8 @@ export class MessageGenerationService {
     if (!lead) throw new Error("Lead tidak ditemukan");
     if (!product) throw new Error("Produk tidak ditemukan");
 
-    if (!hasOpenAI()) {
+    const ai = await getAIConfig(userId);
+    if (!ai) {
       return [this.fallbackMessage(lead, product, data)];
     }
 
@@ -89,9 +90,8 @@ ATURAN:
 
 Kembalikan JSON array ${data.variations} objek: [{"subject": string|null, "body": string}]`;
 
-    const openai = getOpenAI();
-    const res = await openai.chat.completions.create({
-      model: MODEL_GENERATION(),
+    const res = await ai.client.chat.completions.create({
+      model: ai.modelGeneration,
       temperature: 0.8,
       messages: [{ role: "user", content: prompt }],
     });
@@ -99,7 +99,7 @@ Kembalikan JSON array ${data.variations} objek: [{"subject": string|null, "body"
     const text = res.choices[0]?.message?.content ?? "";
     await db.insert(aiGenerations).values({
       type: "message",
-      model: MODEL_GENERATION(),
+      model: ai.modelGeneration,
       prompt: prompt.slice(0, 8000),
       output: text.slice(0, 8000),
       tokensIn: res.usage?.prompt_tokens,

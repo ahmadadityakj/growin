@@ -1,3 +1,4 @@
+import OpenAI from "openai";
 import type { SearchProvider, SearchResultItem } from "./types";
 import { getOpenAI, parseModelJson } from "@/server/providers/openai";
 
@@ -7,9 +8,14 @@ import { getOpenAI, parseModelJson } from "@/server/providers/openai";
  */
 export class OpenAISearchProvider implements SearchProvider {
   name = "openai";
+  private client?: OpenAI;
+
+  constructor(apiKey?: string) {
+    if (apiKey) this.client = new OpenAI({ apiKey });
+  }
 
   async search(query: string, opts?: { count?: number; country?: string }): Promise<SearchResultItem[]> {
-    const openai = getOpenAI();
+    const openai = this.client ?? getOpenAI();
     const count = opts?.count ?? 15;
 
     const response = await openai.responses.create({

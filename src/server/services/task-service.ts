@@ -2,7 +2,7 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { TeamService } from "@/server/services/team-service";
 import { aiTasks, aiTaskLogs, leads, outreachMessages, campaigns, researchJobs } from "@/server/db/schema";
-import { hasOpenAI, getOpenAI, MODEL_GENERATION, parseModelJson } from "@/server/providers/openai";
+import { getAIConfig, parseModelJson } from "@/server/providers/openai";
 import { z } from "zod";
 
 const taskParamsSchema = z.object({
@@ -87,11 +87,11 @@ export class TaskService {
 
   static async create(instruction: string, userId?: string) {
     let parsed: ParsedTask = { type: "other", params: {} };
-    if (hasOpenAI()) {
+    const ai = await getAIConfig(userId);
+    if (ai) {
       try {
-        const openai = getOpenAI();
-        const res = await openai.chat.completions.create({
-          model: MODEL_GENERATION(),
+        const res = await ai.client.chat.completions.create({
+          model: ai.modelGeneration,
           temperature: 0,
           messages: [
             { role: "system", content: PARSE_PROMPT },
@@ -203,11 +203,11 @@ export class TaskService {
           };
 
           let summary = `Total ${stats.totalLeads} leads, ${stats.activeCampaigns} kampanye aktif, ${stats.messagesSent} pesan terkirim.`;
-          if (hasOpenAI()) {
+          const ai = await getAIConfig(task.userId ?? undefined);
+          if (ai) {
             try {
-              const openai = getOpenAI();
-              const res = await openai.chat.completions.create({
-                model: MODEL_GENERATION(),
+              const res = await ai.client.chat.completions.create({
+                model: ai.modelGeneration,
                 messages: [
                   { role: "system", content: "Ringkas statistik marketing berikut dalam Bahasa Indonesia, maks 5 kalimat, sertakan insight singkat." },
                   { role: "user", content: JSON.stringify(stats) },
