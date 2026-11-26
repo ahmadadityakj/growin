@@ -3,12 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { requireOwner } from "@/lib/session";
 import { TeamService } from "@/server/services/team-service";
 import { IntegrationService, type ProviderKey } from "@/server/services/integration-service";
 
 async function requireAuth() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  // kredensial bersifat sensitif: hanya pemilik workspace yang boleh kelola
+  await requireOwner();
   return session;
 }
 

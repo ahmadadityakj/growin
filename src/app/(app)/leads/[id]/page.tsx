@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil, Globe, Mail, Phone, MapPin, ExternalLink } from "lucide-react";
 import { LeadService } from "@/server/services/lead-service";
-import { requireUserId } from "@/lib/session";
+import { requireUserId, requireActorId } from "@/lib/session";
 import { CampaignService } from "@/server/services/campaign-service";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -33,10 +33,11 @@ export default async function LeadDetailPage({
 }) {
   const { id } = await params;
   const uid = await requireUserId();
+  const actor = await requireActorId();
   const [lead, allTags, campaignRows] = await Promise.all([
     LeadService.getById(id, uid),
     LeadService.listTags(uid),
-    CampaignService.list({ ownerId: uid }),
+    CampaignService.list({ userId: actor }),
   ]);
   if (!lead) notFound();
 

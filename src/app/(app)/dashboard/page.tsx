@@ -1,10 +1,11 @@
 import { Users, UserPlus, CheckCircle2, Megaphone, Send, MessageSquareReply, Trophy, ArrowRight } from "lucide-react";
-import { sql, eq, and, isNull, gte, desc } from "drizzle-orm";
+import { sql, eq, and, inArray, isNull, gte, desc } from "drizzle-orm";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { db } from "@/server/db";
-import { leads, campaigns, outreachMessages, leadActivities } from "@/server/db/schema";
+import { leads, campaigns, outreachMessages, leadActivities, users } from "@/server/db/schema";
 import { CampaignService } from "@/server/services/campaign-service";
+import { TeamService } from "@/server/services/team-service";
 import { StatCard, type StatTone } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,8 @@ export default async function DashboardPage() {
   await connection();
   const session = await auth();
   const uid = session!.user.id;
+  const scopeId = await TeamService.resolveScope(uid);
+  const teamIds = await TeamService.teamIdsOf(uid);
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const now = new Date();
 
@@ -40,34 +43,34 @@ export default async function DashboardPage() {
     campaignRows,
     activities,
   ] = await Promise.all([
-    db.select({ c: sql<number>`count(*)::int` }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid))),
+    db.select({ c: sql<number>`count(*)::int` }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, scopeId))),
     db
       .select({ c: sql<number>`count(*)::int` })
       .from(leads)
-      .where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid), gte(leads.createdAt, weekAgo))),
+      .where(and(isNull(leads.deletedAt), eq(leads.ownerId, scopeId), gte(leads.createdAt, weekAgo))),
     db
       .select({ c: sql<number>`count(*)::int` })
       .from(leads)
-      .where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid), eq(leads.status, "qualified"))),
+      .where(and(isNull(leads.deletedAt), eq(leads.ownerId, scopeId), eq(leads.status, "qualified"))),
     db
       .select({ c: sql<number>`count(*)::int` })
       .from(leads)
-      .where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid), eq(leads.status, "converted"))),
+      .where(and(isNull(leads.deletedAt), eq(leads.ownerId, scopeId), eq(leads.status, "converted"))),
     CampaignService.countActive(uid),
     db
       .select({ c: sql<number>`count(*)::int` })
       .from(outreachMessages)
       .where(
         and(
-          eq(outreachMessages.createdById, uid),
+          inArray(outreachMessages.createdById, teamIds),
           sql`${outreachMessages.status} in ('sent','delivered','replied')`
         )
       ),
-    db.select({ c: sql<number>`count(*)::int` }).from(outreachMessages).where(and(eq(outreachMessages.status, "replied"), eq(outreachMessages.createdById, uid))),
+    db.select({ c: sql<number>`count(*)::int` }).from(outreachMessages).where(and(eq(outreachMessages.status, "replied"), inArray(outreachMessages.createdById, teamIds))),
     db
       .select()
       .from(campaigns)
-      .where(and(isNull(campaigns.deletedAt), eq(campaigns.status, "active"), eq(campaigns.createdById, uid)))
+      .where(and(isNull(campaigns.deletedAt), eq(campaigns.status, "active"), inArray(campaigns.createdById, teamIds)))
       .orderBy(desc(campaigns.createdAt))
       .limit(5),
     db
@@ -75,10 +78,12 @@ export default async function DashboardPage() {
         id: leadActivities.id,
         description: leadActivities.description,
         createdAt: leadActivities.createdAt,
+        actorName: users.name,
       })
       .from(leadActivities)
       .innerJoin(leads, eq(leadActivities.leadId, leads.id))
-      .where(eq(leads.ownerId, uid))
+      .leftJoin(users, eq(leadActivities.userId, users.id))
+      .where(eq(leads.ownerId, scopeId))
       .orderBy(desc(leadActivities.createdAt))
       .limit(8),
   ]);
@@ -173,7 +178,12 @@ export default async function DashboardPage() {
               <ul className="space-y-3">
                 {activities.map((a) => (
                   <li key={a.id} className="flex items-start justify-between gap-3">
-                    <div className="text-sm">{a.description}</div>
+                    <div className="text-sm">
+                      {a.description}
+                      {a.actorName && (
+                        <span className="ml-1 text-xs text-muted-foreground">· {a.actorName}</span>
+                      )}
+                    </div>
                     <div className="whitespace-nowrap text-xs text-muted-foreground">
                       {formatDistanceToNow(a.createdAt, { addSuffix: true, locale: localeId })}
                     </div>

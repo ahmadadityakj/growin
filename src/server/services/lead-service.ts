@@ -2,6 +2,7 @@ import {
   and, desc, eq, ilike, isNull, or, sql, inArray, SQL,
 } from "drizzle-orm";
 import { db } from "@/server/db";
+import { TeamService } from "@/server/services/team-service";
 import {
   leads, leadContacts, leadActivities, leadSources, leadScores,
   tags, leadTags, campaignLeads, campaigns,
@@ -169,14 +170,15 @@ export class LeadService {
 
   static async create(input: LeadInput, userId?: string, source: "manual" | "csv_import" | "ai_research" = "manual") {
     const { assertTrialLimit } = await import("@/lib/billing");
-    await assertTrialLimit(userId, "lead");
+    const scopeId = userId ? await TeamService.resolveScope(userId) : undefined;
+    await assertTrialLimit(scopeId, "lead");
     const { nextFollowUpAt, ...rest } = leadInputSchema.parse(input);
     const [created] = await db
       .insert(leads)
       .values({
         ...rest,
         source,
-        ownerId: userId ?? null,
+        ownerId: scopeId ?? null,
         nextFollowUpAt: nextFollowUpAt ? new Date(nextFollowUpAt) : null,
       })
       .returning();
@@ -195,7 +197,12 @@ export class LeadService {
         nextFollowUpAt: nextFollowUpAt ? new Date(nextFollowUpAt) : null,
         updatedAt: new Date(),
       })
-      .where(eq(leads.id, id))
+      .where(
+        and(
+          eq(leads.id, id),
+          userId ? eq(leads.ownerId, await TeamService.resolveScope(userId)) : undefined
+        )
+      )
       .returning();
     if (existing && existing.status !== status) {
       await this.logActivity(id, "status_change", `Status: ${existing.status} → ${status}`, userId);
@@ -208,7 +215,15 @@ export class LeadService {
   static async updateStatus(id: string, status: LeadStatus, userId?: string) {
     const existing = await db.query.leads.findFirst({ where: eq(leads.id, id) });
     if (!existing) return;
-    await db.update(leads).set({ status, updatedAt: new Date() }).where(eq(leads.id, id));
+    await db
+      .update(leads)
+      .set({ status, updatedAt: new Date() })
+      .where(
+        and(
+          eq(leads.id, id),
+          userId ? eq(leads.ownerId, await TeamService.resolveScope(userId)) : undefined
+        )
+      );
     await this.logActivity(id, "status_change", `Status: ${existing.status} → ${status}`, userId);
   }
 
@@ -216,14 +231,27 @@ export class LeadService {
     await db
       .update(leads)
       .set({ status, updatedAt: new Date() })
-      .where(inArray(leads.id, ids));
+      .where(
+        and(
+          inArray(leads.id, ids),
+          userId ? eq(leads.ownerId, await TeamService.resolveScope(userId)) : undefined
+        )
+      );
     for (const id of ids) {
       await this.logActivity(id, "status_change", `Status diubah ke ${status} (bulk)`, userId);
     }
   }
 
   static async softDelete(ids: string[], userId?: string) {
-    await db.update(leads).set({ deletedAt: new Date() }).where(inArray(leads.id, ids));
+    await db
+      .update(leads)
+      .set({ deletedAt: new Date() })
+      .where(
+        and(
+          inArray(leads.id, ids),
+          userId ? eq(leads.ownerId, await TeamService.resolveScope(userId)) : undefined
+        )
+      );
   }
 
   // ---- Tags ----
@@ -315,6 +343,7 @@ export class LeadService {
     let imported = 0;
     let skipped = 0;
     const errors: string[] = [];
+    const scopeId = userId ? await TeamService.resolveScope(userId) : undefined;
 
     for (const [i, row] of rows.entries()) {
       const name = (row.businessName ?? row.business_name ?? row.name ?? "").trim();
@@ -326,7 +355,7 @@ export class LeadService {
       const email = (row.email ?? "").trim() || null;
       const phone = (row.phone ?? row.telepon ?? "").trim() || null;
 
-      const dupes = await this.findDuplicates({ email, phone, businessName: name, ownerId: userId });
+      const dupes = await this.findDuplicates({ email, phone, businessName: name, ownerId: scopeId });
       if (dupes.length > 0) {
         skipped++;
         continue;

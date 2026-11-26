@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus, Megaphone, Pencil, Trash2 } from "lucide-react";
 import { CampaignService } from "@/server/services/campaign-service";
-import { requireUserId } from "@/lib/session";
+import { requireActorId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -21,8 +21,8 @@ export default async function CampaignsPage({
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
   const { q, status } = await searchParams;
-  const uid = await requireUserId();
-  const items = await CampaignService.list({ search: q, status, ownerId: uid });
+  const uid = await requireActorId();
+  const items = await CampaignService.list({ search: q, status, userId: uid });
 
   return (
     <div>

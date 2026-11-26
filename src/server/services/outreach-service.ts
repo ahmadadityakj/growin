@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/server/db";
+import { TeamService } from "@/server/services/team-service";
 import {
   outreachMessages, outreachLogs, leads, leadActivities, unsubscribeRecords,
 } from "@/server/db/schema";
@@ -65,31 +66,34 @@ export class OutreachService {
       .where(eq(outreachMessages.id, id));
   }
 
-  static async approve(ids: string[], ownerId?: string) {
+  static async approve(ids: string[], userId?: string) {
+    const teamIds = userId ? await TeamService.teamIdsOf(userId) : undefined;
     await db
       .update(outreachMessages)
       .set({ status: "approved", updatedAt: new Date() })
-      .where(and(inArray(outreachMessages.id, ids), eq(outreachMessages.status, "pending_approval"), ownerId ? eq(outreachMessages.createdById, ownerId) : undefined));
+      .where(and(inArray(outreachMessages.id, ids), eq(outreachMessages.status, "pending_approval"), teamIds ? inArray(outreachMessages.createdById, teamIds) : undefined));
     for (const id of ids) await this.log(id, "approved");
   }
 
-  static async reject(ids: string[], ownerId?: string) {
+  static async reject(ids: string[], userId?: string) {
+    const teamIds = userId ? await TeamService.teamIdsOf(userId) : undefined;
     await db
       .update(outreachMessages)
       .set({ status: "cancelled", updatedAt: new Date() })
-      .where(and(inArray(outreachMessages.id, ids), eq(outreachMessages.status, "pending_approval"), ownerId ? eq(outreachMessages.createdById, ownerId) : undefined));
+      .where(and(inArray(outreachMessages.id, ids), eq(outreachMessages.status, "pending_approval"), teamIds ? inArray(outreachMessages.createdById, teamIds) : undefined));
     for (const id of ids) await this.log(id, "rejected");
   }
 
   /** Antre pesan yang approved & sudah waktunya kirim ke worker. */
-  static async queueApproved(ownerId?: string) {
+  static async queueApproved(userId?: string) {
+    const teamIds = userId ? await TeamService.teamIdsOf(userId) : undefined;
     const { enqueue, QUEUES } = await import("../jobs/queue");
     const rows = await db
       .select()
       .from(outreachMessages)
       .where(
         and(
-          ownerId ? eq(outreachMessages.createdById, ownerId) : undefined,
+          teamIds ? inArray(outreachMessages.createdById, teamIds) : undefined,
           eq(outreachMessages.status, "approved"),
           // scheduledAt null atau sudah lewat
           // drizzle: scheduledAt <= now OR scheduledAt is null

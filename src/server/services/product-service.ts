@@ -1,5 +1,6 @@
 import { and, desc, eq, ilike, isNull, sql } from "drizzle-orm";
 import { db } from "@/server/db";
+import { TeamService } from "@/server/services/team-service";
 import { products, productKnowledge } from "@/server/db/schema";
 import { z } from "zod";
 
@@ -50,9 +51,10 @@ export class ProductService {
 
   static async create(input: ProductInput, userId?: string) {
     const { assertTrialLimit } = await import("@/lib/billing");
-    await assertTrialLimit(userId, "product");
+    const scopeId = userId ? await TeamService.resolveScope(userId) : undefined;
+    await assertTrialLimit(scopeId, "product");
     const data = productInputSchema.parse(input);
-    const [created] = await db.insert(products).values({ ...data, ownerId: userId ?? null }).returning();
+    const [created] = await db.insert(products).values({ ...data, ownerId: scopeId ?? null }).returning();
     return created;
   }
 

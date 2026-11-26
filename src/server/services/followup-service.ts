@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db } from "@/server/db";
+import { TeamService } from "@/server/services/team-service";
 import {
   followupSequences, followupSteps, followupSchedules,
   outreachMessages, outreachTemplates, messageReplies,
@@ -32,7 +33,7 @@ export class FollowUpService {
         campaignId: data.campaignId ?? null,
         productId: data.productId ?? null,
         channel: data.channel,
-        ownerId: userId ?? null,
+        ownerId: userId ? await TeamService.resolveScope(userId) : null,
       })
       .returning();
     await db.insert(followupSteps).values(

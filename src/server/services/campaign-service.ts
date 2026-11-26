@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
   campaigns,
@@ -6,6 +6,7 @@ import {
   campaignLeads,
   products,
 } from "@/server/db/schema";
+import { TeamService } from "@/server/services/team-service";
 import { z } from "zod";
 
 export const campaignInputSchema = z.object({
@@ -25,9 +26,12 @@ export const campaignInputSchema = z.object({
 export type CampaignInput = z.infer<typeof campaignInputSchema>;
 
 export class CampaignService {
-  static async list(params?: { search?: string; status?: string; productId?: string; ownerId?: string }) {
+  static async list(params?: { search?: string; status?: string; productId?: string; userId?: string }) {
     const conditions = [isNull(campaigns.deletedAt)];
-    if (params?.ownerId) conditions.push(eq(campaigns.createdById, params.ownerId));
+    if (params?.userId) {
+      const ids = await TeamService.teamIdsOf(params.userId);
+      conditions.push(inArray(campaigns.createdById, ids));
+    }
     if (params?.search) conditions.push(ilike(campaigns.name, `%${params.search}%`));
     if (params?.status)
       conditions.push(
@@ -50,9 +54,10 @@ export class CampaignService {
       .orderBy(desc(campaigns.createdAt));
   }
 
-  static async getById(id: string, ownerId?: string) {
+  static async getById(id: string, userId?: string) {
+    const ids = userId ? await TeamService.teamIdsOf(userId) : undefined;
     const campaign = await db.query.campaigns.findFirst({
-      where: and(eq(campaigns.id, id), isNull(campaigns.deletedAt), ownerId ? eq(campaigns.createdById, ownerId) : undefined),
+      where: and(eq(campaigns.id, id), isNull(campaigns.deletedAt), ids ? inArray(campaigns.createdById, ids) : undefined),
     });
     if (!campaign) return null;
     const channels = await db
@@ -77,7 +82,8 @@ export class CampaignService {
     return created;
   }
 
-  static async update(id: string, input: CampaignInput, ownerId?: string) {
+  static async update(id: string, input: CampaignInput, userId?: string) {
+    const ids = userId ? await TeamService.teamIdsOf(userId) : undefined;
     const { channels, startDate, endDate, ...rest } = campaignInputSchema.parse(input);
     const [updated] = await db
       .update(campaigns)
@@ -87,7 +93,7 @@ export class CampaignService {
         endDate: endDate ? new Date(endDate) : null,
         updatedAt: new Date(),
       })
-      .where(and(eq(campaigns.id, id), ownerId ? eq(campaigns.createdById, ownerId) : undefined))
+      .where(and(eq(campaigns.id, id), ids ? inArray(campaigns.createdById, ids) : undefined))
       .returning();
     await this.syncChannels(id, channels);
     return updated;
@@ -106,21 +112,23 @@ export class CampaignService {
     }
   }
 
-  static async softDelete(id: string, ownerId?: string) {
+  static async softDelete(id: string, userId?: string) {
+    const ids = userId ? await TeamService.teamIdsOf(userId) : undefined;
     await db
       .update(campaigns)
       .set({ deletedAt: new Date() })
-      .where(and(eq(campaigns.id, id), ownerId ? eq(campaigns.createdById, ownerId) : undefined));
+      .where(and(eq(campaigns.id, id), ids ? inArray(campaigns.createdById, ids) : undefined));
   }
 
-  static async countActive(ownerId?: string) {
+  static async countActive(userId?: string) {
+    const ids = userId ? await TeamService.teamIdsOf(userId) : undefined;
     const [row] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(campaigns)
       .where(and(
         eq(campaigns.status, "active"),
         isNull(campaigns.deletedAt),
-        ownerId ? eq(campaigns.createdById, ownerId) : undefined
+        ids ? inArray(campaigns.createdById, ids) : undefined
       ));
     return row.count;
   }

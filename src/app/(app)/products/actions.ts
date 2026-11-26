@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { requireOwner } from "@/lib/session";
 import { TeamService } from "@/server/services/team-service";
 import { ProductService, type ProductInput } from "@/server/services/product-service";
 import { db } from "@/server/db";
@@ -17,7 +18,7 @@ async function requireAuth() {
 
 export async function createProduct(input: ProductInput) {
   const session = await requireAuth();
-  const product = await ProductService.create(input, await TeamService.resolveScope(session.user.id));
+  const product = await ProductService.create(input, session.user.id);
   revalidatePath("/products");
   redirect("/products");
 }
@@ -30,6 +31,7 @@ export async function updateProduct(id: string, input: ProductInput) {
 }
 
 export async function deleteProduct(id: string) {
+  await requireOwner();
   const session = await requireAuth();
   await ProductService.softDelete(id, await TeamService.resolveScope(session.user.id));
   revalidatePath("/products");

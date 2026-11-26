@@ -1,6 +1,7 @@
-import { and, eq, count, isNull, gte } from "drizzle-orm";
+import { and, eq, count, inArray, isNull, gte } from "drizzle-orm";
 import { db } from "@/server/db";
 import { users, leads, products, researchJobs } from "@/server/db/schema";
+import { TeamService } from "@/server/services/team-service";
 
 export const TRIAL_DAYS = 14;
 
@@ -68,7 +69,12 @@ export async function assertTrialLimit(
     const [row] = await db
       .select({ c: count() })
       .from(researchJobs)
-      .where(and(gte(researchJobs.createdAt, monthStart), eq(researchJobs.createdById, userId)));
+      .where(
+        and(
+          gte(researchJobs.createdAt, monthStart),
+          inArray(researchJobs.createdById, await TeamService.teamIdsOf(userId))
+        )
+      );
     if ((row?.c ?? 0) >= TRIAL_LIMITS.researchJobsPerMonth) {
       throw new Error(
         `Batas trial tercapai (${TRIAL_LIMITS.researchJobsPerMonth} riset/bulan). Upgrade untuk menambah.`

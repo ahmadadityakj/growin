@@ -7,6 +7,10 @@ import Papa from "papaparse";
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const scope = await TeamService.resolveScope(session.user.id);
+  if (scope !== session.user.id) {
+    return NextResponse.json({ error: "Hanya pemilik workspace yang bisa export" }, { status: 403 });
+  }
 
   const sp = req.nextUrl.searchParams;
   const rows = await LeadService.exportRows({

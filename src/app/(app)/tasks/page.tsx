@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { TaskService } from "@/server/services/task-service";
-import { requireUserId } from "@/lib/session";
+import { requireActorId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -24,7 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default async function TasksPage() {
-  const uid = await requireUserId();
+  const uid = await requireActorId();
   const tasks = await TaskService.list(uid);
 
   return (

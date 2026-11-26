@@ -1,5 +1,6 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import {and, desc, eq, isNull, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
+import { TeamService } from "@/server/services/team-service";
 import {
   leads, products, productKnowledge, outreachTemplates, aiGenerations, campaigns,
 } from "@/server/db/schema";
@@ -154,7 +155,10 @@ export class TemplateService {
     const conds = [isNull(outreachTemplates.deletedAt)];
     if (params?.channel) conds.push(eq(outreachTemplates.channel, params.channel as "email" | "whatsapp"));
     if (params?.productId) conds.push(eq(outreachTemplates.productId, params.productId));
-    if (params?.ownerId) conds.push(eq(outreachTemplates.createdById, params.ownerId));
+    if (params?.ownerId) {
+      const ids = await TeamService.teamIdsOf(params.ownerId);
+      conds.push(inArray(outreachTemplates.createdById, ids));
+    }
     return db
       .select()
       .from(outreachTemplates)
@@ -182,7 +186,12 @@ export class TemplateService {
     const [row] = await db
       .update(outreachTemplates)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(outreachTemplates.id, id), ownerId ? eq(outreachTemplates.createdById, ownerId) : undefined))
+      .where(
+        and(
+          eq(outreachTemplates.id, id),
+          ownerId ? inArray(outreachTemplates.createdById, await TeamService.teamIdsOf(ownerId)) : undefined
+        )
+      )
       .returning();
     return row;
   }
@@ -191,6 +200,11 @@ export class TemplateService {
     await db
       .update(outreachTemplates)
       .set({ deletedAt: new Date() })
-      .where(and(eq(outreachTemplates.id, id), ownerId ? eq(outreachTemplates.createdById, ownerId) : undefined));
+      .where(
+        and(
+          eq(outreachTemplates.id, id),
+          ownerId ? inArray(outreachTemplates.createdById, await TeamService.teamIdsOf(ownerId)) : undefined
+        )
+      );
   }
 }

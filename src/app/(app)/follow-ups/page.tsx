@@ -1,8 +1,8 @@
 import { FollowUpService } from "@/server/services/followup-service";
-import { requireUserId } from "@/lib/session";
+import { requireTeam } from "@/lib/session";
 import { db } from "@/server/db";
 import { campaigns, products, outreachTemplates, leads } from "@/server/db/schema";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -33,15 +33,15 @@ const SCHED_LABELS: Record<string, string> = {
 };
 
 export default async function FollowUpsPage() {
-  const uid = await requireUserId();
+  const { scopeId, teamIds } = await requireTeam();
   const [sequences, schedules, campaignList, productList, templateList, leadList] =
     await Promise.all([
-      FollowUpService.listSequences(uid),
-      FollowUpService.listSchedules({ ownerId: uid }),
-      db.select({ id: campaigns.id, name: campaigns.name }).from(campaigns).where(eq(campaigns.createdById, uid)),
-      db.select({ id: products.id, name: products.name }).from(products).where(and(isNull(products.deletedAt), eq(products.ownerId, uid))),
-      db.select({ id: outreachTemplates.id, name: outreachTemplates.name, channel: outreachTemplates.channel }).from(outreachTemplates).where(and(isNull(outreachTemplates.deletedAt), eq(outreachTemplates.createdById, uid))),
-      db.select({ id: leads.id, businessName: leads.businessName }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid))).orderBy(desc(leads.createdAt)).limit(300),
+      FollowUpService.listSequences(scopeId),
+      FollowUpService.listSchedules({ ownerId: scopeId }),
+      db.select({ id: campaigns.id, name: campaigns.name }).from(campaigns).where(inArray(campaigns.createdById, teamIds)),
+      db.select({ id: products.id, name: products.name }).from(products).where(and(isNull(products.deletedAt), eq(products.ownerId, scopeId))),
+      db.select({ id: outreachTemplates.id, name: outreachTemplates.name, channel: outreachTemplates.channel }).from(outreachTemplates).where(and(isNull(outreachTemplates.deletedAt), inArray(outreachTemplates.createdById, teamIds))),
+      db.select({ id: leads.id, businessName: leads.businessName }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, scopeId))).orderBy(desc(leads.createdAt)).limit(300),
     ]);
 
   return (

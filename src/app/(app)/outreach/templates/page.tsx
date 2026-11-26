@@ -1,7 +1,7 @@
 import { Plus, LayoutTemplate } from "lucide-react";
 import { TemplateService } from "@/server/services/message-generation-service";
 import { ProductService } from "@/server/services/product-service";
-import { requireUserId } from "@/lib/session";
+import { requireUserId, requireActorId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -13,8 +13,9 @@ import { id as localeId } from "date-fns/locale";
 
 export default async function TemplatesPage() {
   const uid = await requireUserId();
+  const actor = await requireActorId();
   const [templates, products] = await Promise.all([
-    TemplateService.list({ ownerId: uid }),
+    TemplateService.list({ ownerId: actor }),
     ProductService.list({ status: "active", ownerId: uid }),
   ]);
   const productMap = new Map(products.map((p) => [p.id, p.name]));

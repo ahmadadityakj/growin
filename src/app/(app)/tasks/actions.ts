@@ -15,7 +15,7 @@ async function requireAuth() {
 
 export async function createTask(instruction: string) {
   const session = await requireAuth();
-  const task = await TaskService.create(instruction, await TeamService.resolveScope(session.user.id));
+  const task = await TaskService.create(instruction, session.user.id);
   await enqueue(QUEUES.taskExecute, { taskId: task.id });
   revalidatePath("/tasks");
   return task.id;

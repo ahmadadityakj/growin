@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { requireOwner } from "@/lib/session";
 import { TeamService } from "@/server/services/team-service";
 import { LeadService, type LeadInput, type LeadStatus } from "@/server/services/lead-service";
 import Papa from "papaparse";
@@ -15,14 +16,14 @@ async function requireAuth() {
 
 export async function createLead(input: LeadInput) {
   const session = await requireAuth();
-  await LeadService.create(input, await TeamService.resolveScope(session.user.id));
+  await LeadService.create(input, session.user.id);
   revalidatePath("/leads");
   redirect("/leads");
 }
 
 export async function updateLead(id: string, input: LeadInput) {
   const session = await requireAuth();
-  await LeadService.update(id, input, await TeamService.resolveScope(session.user.id));
+  await LeadService.update(id, input, session.user.id);
   revalidatePath("/leads");
   revalidatePath(`/leads/${id}`);
   redirect(`/leads/${id}`);
@@ -39,20 +40,21 @@ export async function updateLeadDealValue(id: string, dealValue: number | null) 
 
 export async function updateLeadStatus(id: string, status: LeadStatus) {
   const session = await requireAuth();
-  await LeadService.updateStatus(id, status, await TeamService.resolveScope(session.user.id));
+  await LeadService.updateStatus(id, status, session.user.id);
   revalidatePath("/leads");
   revalidatePath(`/leads/${id}`);
 }
 
 export async function bulkUpdateLeadStatus(ids: string[], status: LeadStatus) {
   const session = await requireAuth();
-  await LeadService.bulkUpdateStatus(ids, status, await TeamService.resolveScope(session.user.id));
+  await LeadService.bulkUpdateStatus(ids, status, session.user.id);
   revalidatePath("/leads");
 }
 
 export async function deleteLeads(ids: string[]) {
+  await requireOwner();
   const session = await requireAuth();
-  await LeadService.softDelete(ids, await TeamService.resolveScope(session.user.id));
+  await LeadService.softDelete(ids, session.user.id);
   revalidatePath("/leads");
 }
 
@@ -65,7 +67,7 @@ export async function createTag(name: string) {
 
 export async function addTagToLead(leadId: string, tagId: string) {
   const session = await requireAuth();
-  await LeadService.addTagToLead(leadId, tagId, await TeamService.resolveScope(session.user.id));
+  await LeadService.addTagToLead(leadId, tagId, session.user.id);
   revalidatePath(`/leads/${leadId}`);
 }
 
@@ -83,19 +85,19 @@ export async function bulkAddTag(ids: string[], tagId: string) {
 
 export async function addLeadToCampaign(leadId: string, campaignId: string) {
   const session = await requireAuth();
-  await LeadService.addToCampaign(leadId, campaignId, await TeamService.resolveScope(session.user.id));
+  await LeadService.addToCampaign(leadId, campaignId, session.user.id);
   revalidatePath(`/leads/${leadId}`);
 }
 
 export async function removeLeadFromCampaign(leadId: string, campaignId: string) {
   const session = await requireAuth();
-  await LeadService.removeFromCampaign(leadId, campaignId, await TeamService.resolveScope(session.user.id));
+  await LeadService.removeFromCampaign(leadId, campaignId, session.user.id);
   revalidatePath(`/leads/${leadId}`);
 }
 
 export async function addLeadNote(leadId: string, note: string) {
   const session = await requireAuth();
-  await LeadService.logActivity(leadId, "note", note, await TeamService.resolveScope(session.user.id));
+  await LeadService.logActivity(leadId, "note", note, session.user.id);
   revalidatePath(`/leads/${leadId}`);
 }
 
@@ -146,7 +148,7 @@ export async function enrichLeadContact(
     leadId,
     type: "note",
     description: `Kontak diperbarui via enrichment${data.verified ? " (verified)" : ""}`,
-    userId: await TeamService.resolveScope(session.user.id),
+    userId: session.user.id,
   });
 
   revalidatePath("/leads/enrichment");
@@ -160,7 +162,7 @@ export async function importLeadsCsv(csvText: string) {
     skipEmptyLines: true,
     transformHeader: (h) => h.trim().toLowerCase().replace(/\s+/g, "_"),
   });
-  const result = await LeadService.importRows(parsed.data, await TeamService.resolveScope(session.user.id));
+  const result = await LeadService.importRows(parsed.data, session.user.id);
   revalidatePath("/leads");
   return result;
 }

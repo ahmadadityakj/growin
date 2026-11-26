@@ -17,6 +17,19 @@ export class TeamService {
     return m?.ownerId ?? userId;
   }
 
+  /**
+   * Semua user id dalam workspace user: owner + seluruh member-nya.
+   * Dipakai untuk filter kolom createdById (data dibuat atas nama user asli).
+   */
+  static async teamIdsOf(userId: string): Promise<string[]> {
+    const scope = await this.resolveScope(userId);
+    const members = await db
+      .select({ memberId: teamMembers.memberId })
+      .from(teamMembers)
+      .where(eq(teamMembers.ownerId, scope));
+    return [scope, ...members.map((m) => m.memberId)];
+  }
+
   /** Membership aktif user (null kalau user bukan member siapa-siapa). */
   static async getMembership(userId: string) {
     const m = await db.query.teamMembers.findFirst({

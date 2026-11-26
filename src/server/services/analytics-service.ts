@@ -1,5 +1,6 @@
-import { and, count, desc, eq, isNull, sql, sum } from "drizzle-orm";
+import {and, count, desc, eq, isNull, sql, sum, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
+import { TeamService } from "@/server/services/team-service";
 import {
   leads, campaigns, campaignLeads, outreachMessages, messageReplies, aiGenerations, integrationLogs,
 } from "@/server/db/schema";
@@ -15,7 +16,8 @@ export class AnalyticsService {
   }
 
   /** Lead per kampanye (nama + jumlah). */
-  static async leadsByCampaign(ownerId?: string) {
+  static async leadsByCampaign(userId?: string) {
+    const teamIds = userId ? await TeamService.teamIdsOf(userId) : undefined;
     return db
       .select({
         name: campaigns.name,
@@ -24,7 +26,7 @@ export class AnalyticsService {
       .from(campaignLeads)
       .innerJoin(campaigns, and(
         eq(campaignLeads.campaignId, campaigns.id),
-        ownerId ? eq(campaigns.createdById, ownerId) : undefined
+        teamIds ? inArray(campaigns.createdById, teamIds) : undefined
       ))
       .groupBy(campaigns.name)
       .orderBy(desc(count(campaignLeads.leadId)))
@@ -32,18 +34,20 @@ export class AnalyticsService {
   }
 
   /** Pesan outreach per status × channel. */
-  static async outreachByStatus(ownerId?: string) {
+  static async outreachByStatus(userId?: string) {
+    const teamIds = userId ? await TeamService.teamIdsOf(userId) : undefined;
     return db
       .select({ channel: outreachMessages.channel, status: outreachMessages.status, count: count() })
       .from(outreachMessages)
-      .where(ownerId ? eq(outreachMessages.createdById, ownerId) : undefined)
+      .where(teamIds ? inArray(outreachMessages.createdById, teamIds) : undefined)
       .groupBy(outreachMessages.channel, outreachMessages.status);
   }
 
   /** KPI atas halaman reports. */
-  static async kpi(ownerId?: string) {
-    const own = ownerId ? eq(leads.ownerId, ownerId) : undefined;
-    const ownMsg = ownerId ? eq(outreachMessages.createdById, ownerId) : undefined;
+  static async kpi(userId?: string) {
+    const teamIds = userId ? await TeamService.teamIdsOf(userId) : undefined;
+    const own = userId ? eq(leads.ownerId, await TeamService.resolveScope(userId)) : undefined;
+    const ownMsg = teamIds ? inArray(outreachMessages.createdById, teamIds) : undefined;
     const [[leadTotal], [qualified], [converted], [sent], [replies], [msgs]] = await Promise.all([
       db.select({ c: count() }).from(leads).where(and(isNull(leads.deletedAt), own)),
       db.select({ c: count() }).from(leads).where(and(eq(leads.status, "qualified"), own)),
@@ -83,7 +87,8 @@ export class AnalyticsService {
   }
 
   /** Pemakaian AI per jenis operasi (call count + token). */
-  static async aiUsage(ownerId?: string) {
+  static async aiUsage(userId?: string) {
+    const teamIds = userId ? await TeamService.teamIdsOf(userId) : undefined;
     const rows = await db
       .select({
         type: aiGenerations.type,
@@ -92,7 +97,7 @@ export class AnalyticsService {
         tokensOut: sum(aiGenerations.tokensOut).mapWith(Number),
       })
       .from(aiGenerations)
-      .where(ownerId ? eq(aiGenerations.userId, ownerId) : undefined)
+      .where(teamIds ? inArray(aiGenerations.userId, teamIds) : undefined)
       .groupBy(aiGenerations.type)
       .orderBy(desc(count()));
     const totals = rows.reduce(

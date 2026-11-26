@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TaskService } from "@/server/services/task-service";
-import { requireUserId } from "@/lib/session";
+import { requireActorId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +24,7 @@ export default async function TaskDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const uid = await requireUserId();
+  const uid = await requireActorId();
   const task = await TaskService.getById(id, uid);
   if (!task) notFound();
 

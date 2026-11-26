@@ -1,5 +1,6 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/server/db";
+import { TeamService } from "@/server/services/team-service";
 import { aiTasks, aiTaskLogs, leads, outreachMessages, campaigns, researchJobs } from "@/server/db/schema";
 import { hasOpenAI, getOpenAI, MODEL_GENERATION, parseModelJson } from "@/server/providers/openai";
 import { z } from "zod";
@@ -54,17 +55,19 @@ function heuristicParse(instruction: string): ParsedTask {
 
 export class TaskService {
   static async list(userId?: string) {
+    const ids = userId ? await TeamService.teamIdsOf(userId) : undefined;
     return db
       .select()
       .from(aiTasks)
-      .where(userId ? eq(aiTasks.userId, userId) : undefined)
+      .where(ids ? inArray(aiTasks.userId, ids) : undefined)
       .orderBy(desc(aiTasks.createdAt))
       .limit(50);
   }
 
   static async getById(id: string, userId?: string) {
+    const ids = userId ? await TeamService.teamIdsOf(userId) : undefined;
     const task = await db.query.aiTasks.findFirst({
-      where: and(eq(aiTasks.id, id), userId ? eq(aiTasks.userId, userId) : undefined),
+      where: and(eq(aiTasks.id, id), ids ? inArray(aiTasks.userId, ids) : undefined),
     });
     if (!task) return null;
     const logs = await db

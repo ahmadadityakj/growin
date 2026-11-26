@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { CampaignService } from "@/server/services/campaign-service";
 import { ProductService } from "@/server/services/product-service";
-import { requireUserId } from "@/lib/session";
+import { requireUserId, requireActorId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { CampaignForm } from "../../campaign-form";
 import { updateCampaign } from "../../actions";
@@ -20,8 +20,9 @@ export default async function EditCampaignPage({
 }) {
   const { id } = await params;
   const uid = await requireUserId();
+  const actor = await requireActorId();
   const [campaign, products] = await Promise.all([
-    CampaignService.getById(id, uid),
+    CampaignService.getById(id, actor),
     ProductService.list({ status: "active", ownerId: uid }),
   ]);
   if (!campaign) notFound();

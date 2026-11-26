@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/server/db";
-import { requireUserId } from "@/lib/session";
+import { requireTeam } from "@/lib/session";
 import { outreachMessages, leads, products, campaigns } from "@/server/db/schema";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -35,7 +35,7 @@ export default async function MessagesPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
-  const uid = await requireUserId();
+  const { teamIds } = await requireTeam();
 
   const rows = await db
     .select({
@@ -48,14 +48,14 @@ export default async function MessagesPage({
     .leftJoin(leads, eq(outreachMessages.leadId, leads.id))
     .leftJoin(products, eq(outreachMessages.productId, products.id))
     .leftJoin(campaigns, eq(outreachMessages.campaignId, campaigns.id))
-    .where(and(eq(outreachMessages.createdById, uid), status ? eq(outreachMessages.status, status as never) : undefined))
+    .where(and(inArray(outreachMessages.createdById, teamIds), status ? eq(outreachMessages.status, status as never) : undefined))
     .orderBy(desc(outreachMessages.createdAt))
     .limit(100);
 
   const pendingCount = await db
     .select({ c: sql<number>`count(*)::int` })
     .from(outreachMessages)
-    .where(and(eq(outreachMessages.status, "pending_approval"), eq(outreachMessages.createdById, uid)));
+    .where(and(eq(outreachMessages.status, "pending_approval"), inArray(outreachMessages.createdById, teamIds)));
 
   return (
     <div>

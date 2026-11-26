@@ -1,5 +1,6 @@
-import { and, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import {and, desc, eq, ilike, isNull, or, sql, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
+import { TeamService } from "@/server/services/team-service";
 import {
   researchJobs, researchResults, leads, leadSources, leadActivities, aiGenerations,
 } from "@/server/db/schema";
@@ -123,17 +124,19 @@ function computeQualityScore(r: {
 }
 
 export class ResearchService {
-  static async listJobs(ownerId?: string) {
+  static async listJobs(userId?: string) {
+    const ids = userId ? await TeamService.teamIdsOf(userId) : undefined;
     return db
       .select()
       .from(researchJobs)
-      .where(ownerId ? eq(researchJobs.createdById, ownerId) : undefined)
+      .where(ids ? inArray(researchJobs.createdById, ids) : undefined)
       .orderBy(desc(researchJobs.createdAt));
   }
 
-  static async getJob(id: string, ownerId?: string) {
+  static async getJob(id: string, userId?: string) {
+    const ids = userId ? await TeamService.teamIdsOf(userId) : undefined;
     return db.query.researchJobs.findFirst({
-      where: and(eq(researchJobs.id, id), ownerId ? eq(researchJobs.createdById, ownerId) : undefined),
+      where: and(eq(researchJobs.id, id), ids ? inArray(researchJobs.createdById, ids) : undefined),
     });
   }
 
@@ -410,7 +413,7 @@ ${pageText.slice(0, 6000)}
     if (!result || result.reviewStatus === "approved") return null;
 
     const job = await this.getJob(result.jobId);
-    if (userId && job?.createdById !== userId) return null;
+    if (userId && !(await TeamService.teamIdsOf(userId)).includes(job?.createdById ?? "")) return null;
 
     // cek duplikat ulang saat approve; bisnis yang sama bisa ketemu
     // di job lain dan keduanya di-approve
@@ -421,7 +424,7 @@ ${pageText.slice(0, 6000)}
           phone: result.phone,
           businessName: result.businessName,
           city: result.city,
-          ownerId: userId ?? job?.createdById ?? undefined,
+          ownerId: await TeamService.resolveScope(userId ?? job?.createdById ?? ""),
         });
 
     if (dup) {
@@ -505,7 +508,7 @@ ${pageText.slice(0, 6000)}
     if (!result) return;
     if (userId) {
       const job = await this.getJob(result.jobId);
-      if (job?.createdById !== userId) return;
+      if (!(await TeamService.teamIdsOf(userId)).includes(job?.createdById ?? "")) return;
     }
     await db
       .update(researchResults)
@@ -535,7 +538,7 @@ ${pageText.slice(0, 6000)}
   static async markJobReviewed(jobId: string, userId?: string) {
     if (userId) {
       const job = await this.getJob(jobId);
-      if (job?.createdById !== userId) return;
+      if (!(await TeamService.teamIdsOf(userId)).includes(job?.createdById ?? "")) return;
     }
     await db
       .update(researchJobs)
