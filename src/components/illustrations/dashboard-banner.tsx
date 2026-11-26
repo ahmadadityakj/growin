@@ -39,6 +39,10 @@ export function DashboardBannerArt({ className }: { className?: string }) {
       />
       <path d="M156 50 l-12 2 8 -9 z" fill="white" fillOpacity="0.7" />
 
+      {/* kecambah di ujung tren — motif tumbuh */}
+      <ellipse cx="170" cy="34" rx="11" ry="5" transform="rotate(-28 170 34)" fill="#a7f3d0" fillOpacity="0.9" />
+      <ellipse cx="154" cy="30" rx="8" ry="4" transform="rotate(-62 154 30)" fill="#a7f3d0" fillOpacity="0.65" />
+
       {/* sparkles */}
       <path d="M40 60 l2.5 7 7 2.5 -7 2.5 -2.5 7 -2.5 -7 -7 -2.5 7 -2.5 z" fill="white" fillOpacity="0.8" />
       <path d="M270 110 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2 z" fill="white" fillOpacity="0.6" />

@@ -11,6 +11,7 @@ import { StatCard, type StatTone } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardBannerArt } from "@/components/illustrations/dashboard-banner";
+import { WeeklyActivity } from "@/components/dashboard/weekly-activity";
 import { LEAD_STATUS_COLORS, CAMPAIGN_STATUS_COLORS } from "@/lib/constants";
 import { t, getLocale } from "@/lib/i18n";
 import { formatDistanceToNow } from "date-fns";
@@ -52,6 +53,8 @@ export default async function DashboardPage() {
     followUpDue,
     recentReplies,
     qualifiedUncontacted,
+    dailySent,
+    dailyReplies,
   ] = await Promise.all([
     db.select({ c: sql<number>`count(*)::int` }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, scopeId))),
     db
@@ -142,6 +145,23 @@ export default async function DashboardPage() {
         )
       )
       .limit(5),
+    db
+      .select({ day: sql<string>`to_char(${outreachMessages.sentAt}, 'YYYY-MM-DD')`, c: sql<number>`count(*)::int` })
+      .from(outreachMessages)
+      .where(
+        and(
+          inArray(outreachMessages.createdById, teamIds),
+          gte(outreachMessages.sentAt, weekAgo),
+          sql`${outreachMessages.status} in ('sent','delivered','replied')`
+        )
+      )
+      .groupBy(sql`to_char(${outreachMessages.sentAt}, 'YYYY-MM-DD')`),
+    db
+      .select({ day: sql<string>`to_char(${messageReplies.createdAt}, 'YYYY-MM-DD')`, c: sql<number>`count(*)::int` })
+      .from(messageReplies)
+      .innerJoin(leads, eq(messageReplies.leadId, leads.id))
+      .where(and(eq(leads.ownerId, scopeId), gte(messageReplies.createdAt, weekAgo)))
+      .groupBy(sql`to_char(${messageReplies.createdAt}, 'YYYY-MM-DD')`),
   ]);
 
   const stats: { title: string; value: number; icon: typeof Users; hint?: string; tone: StatTone }[] = [
@@ -197,6 +217,19 @@ export default async function DashboardPage() {
   const stepsDone = steps.filter((st) => st.done).length;
   const showChecklist = stepsDone < steps.length;
 
+  // aktivitas 7 hari terakhir — label hari singkat id-ID
+  const sentByDay = new Map(dailySent.map((d) => [d.day, d.c]));
+  const repliesByDay = new Map(dailyReplies.map((d) => [d.day, d.c]));
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return {
+      label: d.toLocaleDateString("id-ID", { weekday: "short" }),
+      sent: sentByDay.get(key) ?? 0,
+      replies: repliesByDay.get(key) ?? 0,
+    };
+  });
+
   return (
     <div>
       {/* Hero banner */}
@@ -222,7 +255,7 @@ export default async function DashboardPage() {
               {t.nav.tasks} <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-          <DashboardBannerArt className="hidden w-64 shrink-0 md:block" />
+          <DashboardBannerArt className="hidden w-80 shrink-0 md:block lg:w-96" />
         </div>
       </div>
 
@@ -332,6 +365,24 @@ export default async function DashboardPage() {
         ))}
       </div>
 
+      <Card className="mt-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Aktivitas 7 hari</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {weekDays.every((d) => d.sent === 0) ? (
+            <p className="text-sm text-muted-foreground">
+              Belum ada pesan terkirim minggu ini —{" "}
+              <Link href="/outreach/generate" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+                mulai dari pesan pertama →
+              </Link>
+            </p>
+          ) : (
+            <WeeklyActivity days={weekDays} />
+          )}
+        </CardContent>
+      </Card>
+
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -339,7 +390,18 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             {campaignRows.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t.common.noData}</p>
+              <div className="flex flex-col items-center gap-2 py-4 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  <Megaphone className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-medium">Belum ada kampanye aktif</p>
+                <Link
+                  href="/campaigns/new"
+                  className="text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                >
+                  Buat kampanye pertama →
+                </Link>
+              </div>
             ) : (
               <ul className="space-y-3">
                 {campaignRows.map((c) => (
@@ -364,7 +426,15 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             {activities.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t.common.noData}</p>
+              <div className="flex flex-col items-center gap-2 py-4 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300">
+                  <Target className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-medium">Belum ada aktivitas</p>
+                <p className="text-xs text-muted-foreground">
+                  Aktivitas tim akan muncul di sini saat prospek berubah status atau ada pesan terkirim.
+                </p>
+              </div>
             ) : (
               <ul className="space-y-3">
                 {activities.map((a) => (
