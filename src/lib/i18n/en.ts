@@ -3,7 +3,7 @@ import type { Dictionary } from "./id";
 export const en: Dictionary = {
   app: {
     name: "Growin",
-    tagline: "AI-Powered Business Growth Platform",
+    tagline: "Where your B2B marketing gets done",
   },
   nav: {
     dashboard: "Dashboard",

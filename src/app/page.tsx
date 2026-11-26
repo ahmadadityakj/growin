@@ -2,11 +2,16 @@ import Link from "next/link";
 import {
   Sprout,
   Search,
+  Import,
   MessageSquareText,
   Send,
   Repeat,
-  KanbanSquare,
+  Inbox,
   ShieldCheck,
+  CalendarCheck2,
+  BarChart3,
+  Users,
+  KeyRound,
   ArrowRight,
   Check,
 } from "lucide-react";
@@ -18,16 +23,16 @@ import { GrowthHero } from "@/components/illustrations/growth-hero";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
-  title: "Growin | Platform Marketing & Sales Automation by Kreava",
+  title: "Growin | Tempat Menjalankan Marketing B2B Anda, by Kreava",
   description:
-    "Cari prospek dengan AI, kirim outreach personal via email dan WhatsApp, follow-up otomatis, dan kelola pipeline penjualan dalam satu platform.",
+    "Satu tempat untuk mengelola prospek, outreach WhatsApp & email, follow-up otomatis, dan pipeline penjualan. Leads dari impor, manual, atau riset AI.",
 };
 
 const STEPS = [
   {
-    icon: Search,
-    title: "Riset pasar",
-    desc: "Ketik target Anda, misalnya '50 sekolah swasta di Lombok'. AI mencari kandidat dari sumber publik, mengekstrak kontak, dan menghapus duplikat.",
+    icon: Import,
+    title: "Masukkan prospek",
+    desc: "Dari mana saja: impor daftar yang sudah Anda punya, tambah manual, atau biar AI yang carikan. Misalnya '50 sekolah swasta di Lombok', lengkap dengan kontak dan tanpa duplikat.",
   },
   {
     icon: MessageSquareText,
@@ -37,20 +42,22 @@ const STEPS = [
   {
     icon: Send,
     title: "Outreach personal",
-    desc: "AI menulis pesan yang menyebut detail spesifik bisnis mereka, bukan blast template. Anda approve dulu, baru pesan terkirim via email atau WhatsApp.",
+    desc: "AI menulis pesan yang menyebut detail spesifik bisnis mereka, bukan blast template. Anda approve dulu, baru pesan terkirim dari nomor WA atau domain email Anda sendiri.",
   },
   {
     icon: Repeat,
-    title: "Follow-up otomatis",
-    desc: "Sequence follow-up terjadwal berjalan sendiri dan berhenti otomatis saat lead membalas atau opt-out.",
+    title: "Follow-up sampai deal",
+    desc: "Sequence terjadwal berjalan sendiri dan berhenti saat lead membalas. Balasan masuk ke Inbox Anda, siap dibalas langsung dari aplikasi.",
   },
 ];
 
 const FEATURES = [
-  { icon: KanbanSquare, title: "Pipeline & nilai deal", desc: "Kanban Qualified sampai Won dengan estimasi nilai Rp/bulan per lead. Anda selalu tahu potensi revenue yang sedang berjalan." },
-  { icon: ShieldCheck, title: "Compliance bawaan", desc: "Cek unsubscribe sebelum kirim, halaman opt-out publik, dan approval gate: tidak ada pesan keluar tanpa persetujuan Anda." },
-  { icon: Search, title: "Multi-provider riset", desc: "Tavily atau Brave untuk pencarian, OpenAI untuk ekstraksi dan fallback. Semua request tercatat, biaya terpantau." },
-  { icon: Repeat, title: "Task Center AI", desc: "Instruksi bahasa natural: riset pasar, generate pesan, scoring leads, query CRM. Semua tugas punya status dan bisa direview." },
+  { icon: Inbox, title: "Inbox percakapan", desc: "Balasan leads masuk ke satu tempat, bukan hilang di chat pribadi. Lihat riwayat lengkap tiap lead dan balas langsung dari aplikasi lewat channel yang sama. Ada notifikasi email saat balasan baru datang." },
+  { icon: ShieldCheck, title: "Proteksi nomor pengirim", desc: "Nomor Anda aset bisnis. Growin mengirim bertahap: warm-up mulai 15 pesan/hari, jeda acak antar kirim, tidak kirim malam, dan rem darurat otomatis saat banyak yang minta berhenti." },
+  { icon: CalendarCheck2, title: "Agenda harian", desc: "Dashboard menampilkan yang harus dikerjakan hari ini: follow-up jatuh tempo, balasan baru masuk, dan leads qualified yang belum dihubungi." },
+  { icon: BarChart3, title: "Laporan & nilai deal", desc: "Pipeline kanban dengan estimasi nilai deal, plus laporan revenue per sumber leads, per kampanye, dan per anggota tim. Anda tahu aktivitas mana yang benar-benar menghasilkan." },
+  { icon: Users, title: "Kerja tim", desc: "Undang anggota tim, bagi leads per penanggung jawab, dan pantau performa masing-masing: pesan terkirim, balasan, sampai closing." },
+  { icon: KeyRound, title: "Provider pilihan Anda", desc: "Pakai API key sendiri (OpenAI, Gemini, OpenRouter, DeepSeek, Groq) dengan fallback otomatis ke platform, atau pakai bawaan Growin. Channel kirim juga pilihan Anda: Fonnte, WA Business, Wablas, Twilio, Resend, atau SMTP." },
 ];
 
 const TIERS = [
@@ -58,7 +65,7 @@ const TIERS = [
     name: "Starter",
     price: "Rp149rb",
     for: "Solopreneur yang mulai prospecting",
-    features: ["500 leads", "1 produk", "200 riset AI / bulan", "1 channel outreach", "1 pengguna"],
+    features: ["2.000 leads", "3 produk", "30 riset AI / bulan", "Semua channel outreach", "1 pengguna"],
     cta: "Coba Gratis",
     highlight: false,
   },
@@ -67,11 +74,11 @@ const TIERS = [
     price: "Rp349rb",
     for: "Bisnis yang serius membangun pipeline",
     features: [
-      "5.000 leads",
-      "Produk & kampanye tanpa batas",
-      "2.000 riset AI / bulan",
-      "Email + WhatsApp",
+      "10.000 leads",
+      "10 produk",
+      "150 riset AI / bulan",
       "Follow-up sequence otomatis",
+      "3 anggota tim",
       "Pipeline & laporan",
     ],
     cta: "Coba Gratis",
@@ -83,8 +90,9 @@ const TIERS = [
     for: "Agency dan tim sales kecil",
     features: [
       "Leads tanpa batas",
-      "10.000 riset AI / bulan",
-      "5 pengguna",
+      "Produk tanpa batas",
+      "500 riset AI / bulan",
+      "10 anggota tim",
       "Semua fitur Growth",
       "Priority support",
     ],
@@ -158,15 +166,17 @@ export default async function LandingPage() {
               </span>
             </h1>
             <p className="mt-5 max-w-md text-lg text-muted-foreground">
-              Growin membantu Anda menemukan calon pelanggan dengan AI, mengirim outreach personal
-              via email dan WhatsApp, dan mengelola pipeline penjualan dalam satu platform.
+              Satu tempat untuk menjalankan marketing B2B setiap hari: kelola prospek, kirim
+              outreach personal via WhatsApp dan email, follow-up otomatis, sampai deal.
+              Leads bisa dari daftar yang sudah Anda punya, atau dicarikan AI.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button size="lg" className="shadow-md shadow-emerald-600/20" render={<Link href={ctaHref}>{ctaLabel} <ArrowRight className="ml-1" /></Link>} />
               <Button size="lg" variant="outline" render={<a href="#cara-kerja">Lihat cara kerja</a>} />
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              Trial 14 hari: 500 leads · 1 produk · 10 riset AI/bulan (maks 50 per riset). Tanpa kartu kredit.
+              Trial 14 hari: 500 leads · 10 riset AI · 200 operasi AI. Pesan terkirim atas nama
+              nomor/domain Anda sendiri (Fonnte, Resend, dsb). Tanpa kartu kredit.
             </p>
           </div>
 
@@ -191,11 +201,11 @@ export default async function LandingPage() {
             <div className="absolute -bottom-4 left-10 hidden rounded-xl border bg-white/95 p-3 shadow-lg backdrop-blur sm:block">
               <div className="flex items-center gap-2 text-xs">
                 <span className="flex h-6 w-6 items-center justify-center rounded-md bg-teal-100 text-teal-700">
-                  <Send className="h-3 w-3" />
+                  <Inbox className="h-3 w-3" />
                 </span>
                 <div>
-                  <div className="font-semibold">Pesan terkirim</div>
-                  <div className="text-muted-foreground">WhatsApp ke 12 leads</div>
+                  <div className="font-semibold">Balasan baru</div>
+                  <div className="text-muted-foreground">PT Maju membalas WA Anda</div>
                 </div>
               </div>
             </div>
@@ -337,12 +347,14 @@ export default async function LandingPage() {
         <div className="mt-8 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 text-sm">
           <span className="font-semibold text-emerald-900">Semua akun mulai dari trial 14 hari. </span>
           <span className="text-muted-foreground">
-            Yang Anda dapat selama trial: 500 leads, 1 produk, 10 riset AI per bulan (maks 50 prospek per riset),
-            semua channel outreach, dan pipeline penuh. Setelah 14 hari, data tetap tersimpan; upgrade untuk melanjutkan.
+            Yang Anda dapat selama trial: 500 leads, 1 produk, 10 riset AI (maks 50 prospek per riset),
+            200 operasi AI platform, semua channel outreach, Inbox, follow-up, dan pipeline penuh.
+            Pesan dikirim dari nomor WA/domain email Anda sendiri, bukan nomor Growin.
+            Setelah 14 hari, data tetap tersimpan; upgrade untuk melanjutkan.
           </span>
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
-          Kuota riset habis? Top-up Rp50rb per 500 riset. Harga peluncuran dan dapat berubah.
+          Pembayaran via transfer bank, konfirmasi diproses maks 1x24 jam kerja. Harga peluncuran dan dapat berubah.
         </p>
       </section>
 

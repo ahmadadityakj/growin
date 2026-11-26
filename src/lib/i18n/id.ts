@@ -1,7 +1,7 @@
 export const id = {
   app: {
     name: "Growin",
-    tagline: "AI-Powered Business Growth Platform",
+    tagline: "Tempat menjalankan marketing B2B Anda",
   },
   nav: {
     dashboard: "Dashboard",
