@@ -3,7 +3,7 @@ import { sql, eq, and, inArray, isNull, gte, desc } from "drizzle-orm";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { db } from "@/server/db";
-import { leads, campaigns, outreachMessages, leadActivities, users } from "@/server/db/schema";
+import { leads, campaigns, outreachMessages, leadActivities, users, products, researchJobs } from "@/server/db/schema";
 import { CampaignService } from "@/server/services/campaign-service";
 import { TeamService } from "@/server/services/team-service";
 import { StatCard, type StatTone } from "@/components/shared/stat-card";
@@ -42,6 +42,9 @@ export default async function DashboardPage() {
     replies,
     campaignRows,
     activities,
+    productCount,
+    researchCount,
+    contactReady,
   ] = await Promise.all([
     db.select({ c: sql<number>`count(*)::int` }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, scopeId))),
     db
@@ -86,6 +89,24 @@ export default async function DashboardPage() {
       .where(eq(leads.ownerId, scopeId))
       .orderBy(desc(leadActivities.createdAt))
       .limit(8),
+    db
+      .select({ c: sql<number>`count(*)::int` })
+      .from(products)
+      .where(and(isNull(products.deletedAt), eq(products.ownerId, scopeId))),
+    db
+      .select({ c: sql<number>`count(*)::int` })
+      .from(researchJobs)
+      .where(inArray(researchJobs.createdById, teamIds)),
+    db
+      .select({ c: sql<number>`count(*)::int` })
+      .from(leads)
+      .where(
+        and(
+          isNull(leads.deletedAt),
+          eq(leads.ownerId, scopeId),
+          sql`(${leads.email} is not null or ${leads.whatsappNumber} is not null or ${leads.phone} is not null)`
+        )
+      ),
   ]);
 
   const stats: { title: string; value: number; icon: typeof Users; hint?: string; tone: StatTone }[] = [
@@ -105,6 +126,35 @@ export default async function DashboardPage() {
     month: "long",
     year: "numeric",
   });
+
+  const steps = [
+    {
+      done: productCount[0].c > 0,
+      label: "Buat produk/layanan yang mau dijual",
+      href: "/products/new",
+      cta: "Buat produk",
+    },
+    {
+      done: researchCount[0].c > 0,
+      label: "Jalankan riset AI untuk cari prospek",
+      href: "/research/new",
+      cta: "Mulai riset",
+    },
+    {
+      done: contactReady[0].c > 0,
+      label: "Lengkapi kontak lead (sering perlu kerja manual)",
+      href: "/leads/enrichment",
+      cta: "Buka Enrichment",
+    },
+    {
+      done: sentMessages[0].c > 0,
+      label: "Kirim pesan outreach pertama",
+      href: "/outreach/generate",
+      cta: "Buat pesan",
+    },
+  ];
+  const stepsDone = steps.filter((st) => st.done).length;
+  const showChecklist = stepsDone < steps.length;
 
   return (
     <div>
@@ -134,6 +184,48 @@ export default async function DashboardPage() {
           <DashboardBannerArt className="hidden w-64 shrink-0 md:block" />
         </div>
       </div>
+
+      {showChecklist && (
+        <Card className="mb-6 border-emerald-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              Mulai dari sini — {stepsDone}/{steps.length} langkah selesai
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="space-y-3">
+              {steps.map((step, i) => (
+                <li key={i} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    {step.done ? (
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+                    ) : (
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted-foreground/30 text-[10px] font-bold text-muted-foreground">
+                        {i + 1}
+                      </span>
+                    )}
+                    <span className={`text-sm ${step.done ? "text-muted-foreground line-through" : ""}`}>
+                      {step.label}
+                    </span>
+                  </div>
+                  {!step.done && (
+                    <Link
+                      href={step.href}
+                      className="whitespace-nowrap text-sm font-medium text-emerald-700 hover:underline"
+                    >
+                      {step.cta} →
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 border-t pt-3 text-xs text-muted-foreground">
+              Catatan: riset AI hanya menemukan bisnis dengan jejak online. Kontak WhatsApp sering
+              perlu dilengkapi manual — itu bagian dari alurnya, bukan bug.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (

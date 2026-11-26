@@ -166,6 +166,14 @@ export function LeadsTable({
                   <div className="text-xs text-muted-foreground">
                     {lead.email ?? lead.phone ?? ""}
                   </div>
+                  {!lead.email && !lead.phone && !lead.whatsappNumber && (
+                    <Link
+                      href="/leads/enrichment"
+                      className="mt-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-200"
+                    >
+                      Kontak minim
+                    </Link>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm">
                   {[lead.city, lead.province].filter(Boolean).join(", ") || "-"}

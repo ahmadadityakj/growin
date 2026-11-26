@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { ResearchService } from "@/server/services/research-service";
+import Link from "next/link";
+import { Info, ArrowRight } from "lucide-react";
 import { requireActorId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -32,6 +34,11 @@ export default async function ResearchJobPage({
 
   const running = job.status === "pending" || job.status === "processing";
 
+  const approved = results.filter((r) => r.reviewStatus === "approved");
+  const missingContact = approved.filter(
+    (r) => !r.email && !r.phone && !r.whatsappNumber
+  ).length;
+
   return (
     <div>
       {running && <AutoRefresh intervalMs={5000} />}
@@ -55,7 +62,43 @@ export default async function ResearchJobPage({
           </CardContent>
         </Card>
       ) : (
-        <ResultsTable jobId={job.id} results={results} jobStatus={job.status} />
+        <>
+          <div className="mb-4 flex gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+            <Info className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>
+              AI hanya menemukan bisnis yang punya jejak online, dan kontak seperti WhatsApp sering
+              tidak tertulis di web. Lengkapi manual lewat{" "}
+              <Link href="/leads/enrichment" className="font-medium underline underline-offset-4">
+                Enrichment Kontak
+              </Link>{" "}
+              atau impor daftar Anda sendiri.
+            </p>
+          </div>
+
+          {job.status === "completed" && approved.length > 0 && (
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <p className="text-sm text-emerald-900">
+                {approved.length} lead masuk ke CRM
+                {missingContact > 0 && (
+                  <>
+                    {" "}· {missingContact} belum punya kontak lengkap
+                  </>
+                )}
+                .
+              </p>
+              {missingContact > 0 && (
+                <Link
+                  href="/leads/enrichment"
+                  className="flex items-center gap-1 whitespace-nowrap text-sm font-medium text-emerald-800 hover:underline"
+                >
+                  Lengkapi kontak <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
+            </div>
+          )}
+
+          <ResultsTable jobId={job.id} results={results} jobStatus={job.status} />
+        </>
       )}
     </div>
   );

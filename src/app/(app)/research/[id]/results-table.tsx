@@ -43,7 +43,22 @@ export function ResultsTable({
     });
 
   if (results.length === 0) {
-    return <EmptyState title="Tidak ada hasil" description="Riset tidak menemukan bisnis yang cocok." />;
+    return (
+      <EmptyState
+        title="Tidak ada hasil"
+        description="Target niche ini mungkin jarang punya web presence. Coba perluas kata kunci, impor daftar dari direktori/asosiasi, atau tambah lead manual dari temuan Anda sendiri."
+        action={
+          <div className="flex gap-2">
+            <Button variant="outline" render={<Link href="/leads/new" />}>
+              Tambah Lead Manual
+            </Button>
+            <Button variant="outline" render={<Link href="/leads/import" />}>
+              Impor CSV
+            </Button>
+          </div>
+        }
+      />
+    );
   }
 
   return (
