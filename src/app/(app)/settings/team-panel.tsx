@@ -37,7 +37,7 @@ export function InviteForm() {
       </form>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {link && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-800 dark:bg-emerald-950/50">
           <code className="flex-1 truncate text-xs text-emerald-900">{link}</code>
           <Button
             size="sm"

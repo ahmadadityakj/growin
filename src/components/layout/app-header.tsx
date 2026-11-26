@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { t } from "@/lib/i18n";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export function AppHeader({
   userName,
@@ -34,10 +35,11 @@ export function AppHeader({
       <SidebarTrigger />
       <Separator orientation="vertical" className="h-6" />
       <div className="flex-1" />
+      <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="ghost" className="flex h-10 items-center gap-2 rounded-full px-1.5 pr-3 hover:bg-emerald-50">
+            <Button variant="ghost" className="flex h-10 items-center gap-2 rounded-full px-1.5 pr-3 hover:bg-accent">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-semibold text-white">
                   {initials || <User className="h-4 w-4" />}

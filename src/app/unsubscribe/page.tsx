@@ -4,6 +4,7 @@ import { unsubscribeRecords, leads } from "@/server/db/schema";
 import { Sprout } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UnsubscribeForm } from "./unsubscribe-form";
+import { ForceLight } from "@/components/theme/force-light";
 
 export default async function UnsubscribePage({
   searchParams,
@@ -25,6 +26,7 @@ export default async function UnsubscribePage({
   }
 
   return (
+    <ForceLight>
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="items-center">
@@ -44,5 +46,6 @@ export default async function UnsubscribePage({
         </CardContent>
       </Card>
     </div>
+    </ForceLight>
   );
 }

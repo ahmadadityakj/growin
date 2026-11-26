@@ -10,9 +10,9 @@ import { SlotSection, type SlotOption, type ProviderCardData } from "./slot-sect
 import { t } from "@/lib/i18n";
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "bg-green-100 text-green-800",
-  inactive: "bg-gray-100 text-gray-800",
-  error: "bg-red-100 text-red-800",
+  active: "bg-green-100 text-green-800 dark:bg-green-950/60 dark:text-green-300",
+  inactive: "bg-gray-100 text-gray-800 dark:bg-gray-950/60 dark:text-gray-300",
+  error: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300",
 };
 
 const PROVIDER_NOTES: Partial<Record<ProviderKey, string>> = {
@@ -94,7 +94,7 @@ export default async function IntegrationsPage() {
       fields: PROVIDER_FIELDS[key],
       existing: row ? { name: row.name, fields: Object.keys(row.credentials ?? {}) } : null,
       status: row?.status ?? "not_configured",
-      statusColor: STATUS_COLORS[row?.status ?? ""] ?? "bg-gray-100 text-gray-800",
+      statusColor: STATUS_COLORS[row?.status ?? ""] ?? "bg-gray-100 text-gray-800 dark:bg-gray-950/60 dark:text-gray-300",
       note: PROVIDER_NOTES[key],
       lastError: cfg.lastError,
       lastErrorAt: cfg.lastErrorAt,
@@ -111,7 +111,7 @@ export default async function IntegrationsPage() {
         description="Pilih provider untuk tiap kemampuan. Credential disimpan terenkripsi."
       />
 
-      <div className="mb-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-relaxed text-blue-900">
+      <div className="mb-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-relaxed text-blue-900 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-200">
         <strong>Bawaan platform</strong> memakai kuota paket Growin Anda.{" "}
         <strong>Provider dengan key sendiri</strong> mengikuti limit & biaya akun Anda di provider
         tersebut — jika provider Anda limit atau error, sistem otomatis fallback ke bawaan platform
@@ -186,7 +186,7 @@ export default async function IntegrationsPage() {
                   {p.title}
                   <StatusBadge
                     label={row?.status ?? "not_configured"}
-                    colorClass={STATUS_COLORS[row?.status ?? ""] ?? "bg-gray-100 text-gray-800"}
+                    colorClass={STATUS_COLORS[row?.status ?? ""] ?? "bg-gray-100 text-gray-800 dark:bg-gray-950/60 dark:text-gray-300"}
                   />
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">{p.desc}</p>
@@ -209,7 +209,7 @@ export default async function IntegrationsPage() {
         })}
       </div>
 
-      <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm leading-relaxed text-emerald-900">
+      <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm leading-relaxed text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
         <strong>Butuh provider yang belum ada?</strong> Daftar ini terus bertambah — kalau Anda
         pakai layanan lain (gateway WA, email API, model AI), minta ke kami dan akan kami
         tambahkan kalau memungkinkan.

@@ -18,17 +18,17 @@ import { MessageActions, QueueButton } from "./message-actions";
 import { SendQuota } from "./send-quota";
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-800",
-  pending_approval: "bg-amber-100 text-amber-800",
-  approved: "bg-blue-100 text-blue-800",
-  queued: "bg-indigo-100 text-indigo-800",
-  sending: "bg-purple-100 text-purple-800",
-  sent: "bg-cyan-100 text-cyan-800",
-  delivered: "bg-teal-100 text-teal-800",
-  failed: "bg-red-100 text-red-800",
-  bounced: "bg-orange-100 text-orange-800",
-  replied: "bg-green-100 text-green-800",
-  cancelled: "bg-slate-100 text-slate-800",
+  draft: "bg-gray-100 text-gray-800 dark:bg-gray-950/60 dark:text-gray-300",
+  pending_approval: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
+  approved: "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300",
+  queued: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300",
+  sending: "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300",
+  sent: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300",
+  delivered: "bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300",
+  failed: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300",
+  bounced: "bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300",
+  replied: "bg-green-100 text-green-800 dark:bg-green-950/60 dark:text-green-300",
+  cancelled: "bg-slate-100 text-slate-800 dark:bg-slate-950/60 dark:text-slate-300",
 };
 
 export default async function MessagesPage({

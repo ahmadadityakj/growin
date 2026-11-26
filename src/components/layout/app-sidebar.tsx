@@ -118,7 +118,7 @@ export function AppSidebar({
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
                         isActive={active}
-                        className="h-9 px-2.5 data-[active=true]:bg-emerald-100/70 data-[active=true]:font-semibold data-[active=true]:text-emerald-800 hover:bg-emerald-50/70 hover:text-emerald-900"
+                        className="h-9 px-2.5 data-[active=true]:bg-emerald-100/70 data-[active=true]:font-semibold data-[active=true]:text-emerald-800 hover:bg-emerald-50/70 hover:text-emerald-900 dark:data-[active=true]:bg-emerald-950/60 dark:data-[active=true]:text-emerald-200 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200"
                         render={
                           <Link href={item.href}>
                             <item.icon

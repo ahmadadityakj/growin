@@ -33,9 +33,9 @@ const PLANS = [
 ] as const;
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending: { label: "Menunggu konfirmasi", color: "bg-amber-100 text-amber-800" },
-  paid: { label: "Dibayar", color: "bg-green-100 text-green-800" },
-  rejected: { label: "Ditolak", color: "bg-red-100 text-red-800" },
+  pending: { label: "Menunggu konfirmasi", color: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300" },
+  paid: { label: "Dibayar", color: "bg-green-100 text-green-800 dark:bg-green-950/60 dark:text-green-300" },
+  rejected: { label: "Ditolak", color: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300" },
 };
 
 export default async function BillingPage() {
@@ -137,7 +137,7 @@ export default async function BillingPage() {
               <CardTitle className="flex items-center justify-between text-base">
                 {p.name}
                 {billing.plan === p.id && (
-                  <StatusBadge label="aktif" colorClass="bg-emerald-100 text-emerald-800" />
+                  <StatusBadge label="aktif" colorClass="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300" />
                 )}
               </CardTitle>
               <div className="text-2xl font-extrabold">
@@ -208,7 +208,7 @@ export default async function BillingPage() {
                     <td className="py-2 text-right">
                       <StatusBadge
                         label={STATUS_LABELS[r.status]?.label ?? r.status}
-                        colorClass={STATUS_LABELS[r.status]?.color ?? "bg-gray-100 text-gray-800"}
+                        colorClass={STATUS_LABELS[r.status]?.color ?? "bg-gray-100 text-gray-800 dark:bg-gray-950/60 dark:text-gray-300"}
                       />
                     </td>
                   </tr>

@@ -7,7 +7,7 @@ export function TrialBanner({ daysLeft }: { daysLeft: number }) {
   return (
     <div
       className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-2 text-xs sm:text-sm ${
-        urgent ? "bg-amber-100 text-amber-900" : "bg-emerald-50 text-emerald-900"
+        urgent ? "bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-200" : "bg-emerald-50 text-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-200"
       }`}
     >
       <span className="flex items-center gap-1.5 font-medium">

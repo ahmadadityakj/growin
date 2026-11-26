@@ -37,7 +37,7 @@ export default async function AppLayout({
         {billing.isTrial && billing.daysLeft !== null && (
           <TrialBanner daysLeft={billing.daysLeft} />
         )}
-        <main className="flex-1 overflow-auto bg-[#f9fbfa] p-4 md:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-auto bg-muted/40 p-4 md:p-6 lg:p-8">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

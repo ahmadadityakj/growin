@@ -40,7 +40,7 @@ export function UpgradeForm({
 
   if (done) {
     return (
-      <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+      <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
         Konfirmasi terkirim — admin akan verifikasi maksimal 1×24 jam kerja.
       </p>
     );
@@ -53,7 +53,7 @@ export function UpgradeForm({
           <label
             key={p.id}
             className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-              plan === p.id ? "border-emerald-300 bg-emerald-50/60" : "border-border/60"
+              plan === p.id ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-700 dark:bg-emerald-950/40" : "border-border/60"
             }`}
           >
             <input

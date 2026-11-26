@@ -135,7 +135,7 @@ export default async function InboxPage({
         <div className="grid items-start gap-4 md:grid-cols-[300px_minmax(0,1fr)]">
           {/* Daftar percakapan */}
           <div
-            className={`overflow-hidden rounded-lg border bg-white ${
+            className={`overflow-hidden rounded-lg border bg-card ${
               selected ? "hidden md:block" : ""
             }`}
           >
@@ -146,8 +146,8 @@ export default async function InboxPage({
                   <Link
                     key={c.lead.id}
                     href={`/inbox?lead=${c.lead.id}`}
-                    className={`block px-4 py-3 transition-colors hover:bg-emerald-50/50 ${
-                      active ? "bg-emerald-50/70" : ""
+                    className={`block px-4 py-3 transition-colors hover:bg-accent/50 ${
+                      active ? "bg-accent/70" : ""
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -179,7 +179,7 @@ export default async function InboxPage({
 
           {/* Thread */}
           {selected ? (
-            <div className="overflow-hidden rounded-lg border bg-white">
+            <div className="overflow-hidden rounded-lg border bg-card">
               <MarkRead leadId={selected.lead.id} />
               <div className="flex items-center gap-3 border-b px-4 py-3">
                 <Link
@@ -211,7 +211,7 @@ export default async function InboxPage({
                 </Link>
               </div>
 
-              <div className="space-y-3 bg-[#f9fbfa] p-4">
+              <div className="space-y-3 bg-muted/40 p-4">
                 {thread.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">
                     Belum ada riwayat pesan.
@@ -239,7 +239,7 @@ export default async function InboxPage({
                       </div>
                     ) : (
                       <div key={i} className="mr-auto w-fit max-w-[85%] sm:max-w-[70%]">
-                        <div className="whitespace-pre-wrap rounded-lg border bg-white px-3.5 py-2.5 text-sm">
+                        <div className="whitespace-pre-wrap rounded-lg border bg-card px-3.5 py-2.5 text-sm">
                           {item.body}
                         </div>
                         <div className="mt-1 text-[11px] text-muted-foreground">

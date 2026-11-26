@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { TeamService } from "@/server/services/team-service";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ForceLight } from "@/components/theme/force-light";
 import { AcceptInviteButton } from "./accept-button";
 
 export default async function InvitePage({
@@ -26,6 +27,7 @@ export default async function InvitePage({
   const emailMatch = session?.user?.email?.toLowerCase() === invite?.email;
 
   return (
+    <ForceLight>
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-background to-teal-50 p-6">
       <div className="w-full max-w-md">
         <div className="mb-6 flex justify-center">
@@ -87,5 +89,6 @@ export default async function InvitePage({
         </Card>
       </div>
     </div>
+    </ForceLight>
   );
 }

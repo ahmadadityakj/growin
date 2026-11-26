@@ -21,6 +21,7 @@ import { leads, outreachMessages, researchResults } from "@/server/db/schema";
 import { count, eq, isNull } from "drizzle-orm";
 import { GrowthHero } from "@/components/illustrations/growth-hero";
 import { Button } from "@/components/ui/button";
+import { ForceLight } from "@/components/theme/force-light";
 
 export const metadata = {
   title: "Growin | Tempat Menjalankan Marketing B2B Anda, by Kreava",
@@ -128,6 +129,7 @@ export default async function LandingPage() {
   const showStats = stats.leads + stats.sent + stats.results > 0;
 
   return (
+    <ForceLight>
     <div className="min-h-screen bg-background font-sans">
       {/* Nav */}
       <header className="sticky top-0 z-20 border-b border-emerald-100 bg-background/90 backdrop-blur">
@@ -432,5 +434,6 @@ export default async function LandingPage() {
         </div>
       </footer>
     </div>
+    </ForceLight>
   );
 }

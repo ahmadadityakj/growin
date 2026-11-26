@@ -11,7 +11,7 @@ export async function ChannelStatus({ scopeId }: { scopeId: string }) {
 
   const missing = [!wa && "WhatsApp", !em && "Email"].filter(Boolean).join(" & ");
   return (
-    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
       <span className="font-medium">Channel {missing} belum dikonfigurasi.</span>{" "}
       Pesan tetap bisa dibuat & direview, tapi tidak akan terkirim sampai Anda aktifkan provider
       sendiri di{" "}

@@ -12,11 +12,11 @@ import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-gray-100 text-gray-800",
-  processing: "bg-blue-100 text-blue-800",
-  needs_review: "bg-amber-100 text-amber-800",
-  completed: "bg-green-100 text-green-800",
-  failed: "bg-red-100 text-red-800",
+  pending: "bg-gray-100 text-gray-800 dark:bg-gray-950/60 dark:text-gray-300",
+  processing: "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300",
+  needs_review: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
+  completed: "bg-green-100 text-green-800 dark:bg-green-950/60 dark:text-green-300",
+  failed: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300",
 };
 
 export default async function ResearchJobPage({
@@ -63,7 +63,7 @@ export default async function ResearchJobPage({
         </Card>
       ) : (
         <>
-          <div className="mb-4 flex gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+          <div className="mb-4 flex gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-200">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
               AI hanya menemukan bisnis yang punya jejak online, dan kontak seperti WhatsApp sering
@@ -76,7 +76,7 @@ export default async function ResearchJobPage({
           </div>
 
           {job.status === "completed" && approved.length > 0 && (
-            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-950/50">
               <p className="text-sm text-emerald-900">
                 {approved.length} lead masuk ke CRM
                 {missingContact > 0 && (

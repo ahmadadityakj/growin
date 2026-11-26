@@ -70,7 +70,7 @@ export function SlotSection({
           {active && (
             <StatusBadge
               label={active.existing ? active.status : "belum_lengkap"}
-              colorClass={active.existing ? active.statusColor : "bg-amber-100 text-amber-800"}
+              colorClass={active.existing ? active.statusColor : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"}
             />
           )}
         </CardTitle>
@@ -84,7 +84,7 @@ export function SlotSection({
                 key={opt.value}
                 className={`flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
                   selected === opt.value
-                    ? "border-emerald-300 bg-emerald-50/60"
+                    ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-700 dark:bg-emerald-950/40"
                     : "border-border/60 hover:bg-muted/40"
                 } ${pending ? "pointer-events-none opacity-60" : ""}`}
               >
@@ -114,7 +114,7 @@ export function SlotSection({
         )}
 
         {isOwner && selected === "platform" && platformNote && (
-          <p className="rounded-lg bg-blue-50 px-3 py-2 text-xs leading-relaxed text-blue-800">
+          <p className="rounded-lg bg-blue-50 px-3 py-2 text-xs leading-relaxed text-blue-800 dark:bg-blue-950/50 dark:text-blue-200">
             {platformNote}
           </p>
         )}
@@ -125,7 +125,7 @@ export function SlotSection({
               <p className="text-xs leading-relaxed text-muted-foreground/80">{active.note}</p>
             )}
             {(active.lastError || active.lastFallbackAt) && (
-              <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+              <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
                 {active.lastError && (
                   <p>
                     Terakhir error ({fmtDate(active.lastErrorAt)}): {active.lastError}
