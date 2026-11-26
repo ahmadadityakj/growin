@@ -12,26 +12,26 @@ async function requireAuth() {
 }
 
 export async function createSequence(input: SequenceInput) {
-  await requireAuth();
-  await FollowUpService.createSequence(input);
+  const session = await requireAuth();
+  await FollowUpService.createSequence(input, session.user.id);
   revalidatePath("/follow-ups");
 }
 
 export async function toggleSequence(id: string, isActive: boolean) {
-  await requireAuth();
-  await FollowUpService.setActive(id, isActive);
+  const session = await requireAuth();
+  await FollowUpService.setActive(id, isActive, session.user.id);
   revalidatePath("/follow-ups");
 }
 
 export async function enrollLeads(sequenceId: string, leadIds: string[]) {
-  await requireAuth();
-  const n = await FollowUpService.enroll(sequenceId, leadIds);
+  const session = await requireAuth();
+  const n = await FollowUpService.enroll(sequenceId, leadIds, session.user.id);
   revalidatePath("/follow-ups");
   return { enrolled: n };
 }
 
 export async function setScheduleStatus(id: string, status: "paused" | "cancelled" | "active") {
-  await requireAuth();
-  await FollowUpService.setScheduleStatus(id, status);
+  const session = await requireAuth();
+  await FollowUpService.setScheduleStatus(id, status, session.user.id);
   revalidatePath("/follow-ups");
 }

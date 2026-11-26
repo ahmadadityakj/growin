@@ -1,4 +1,5 @@
 import { LeadService } from "@/server/services/lead-service";
+import { requireUserId } from "@/lib/session";
 import { ProductService } from "@/server/services/product-service";
 import { CampaignService } from "@/server/services/campaign-service";
 import { PageHeader } from "@/components/shared/page-header";
@@ -11,10 +12,11 @@ export default async function GeneratePage({
   searchParams: Promise<{ lead?: string; product?: string; campaign?: string }>;
 }) {
   const sp = await searchParams;
+  const uid = await requireUserId();
   const [leads, products, campaigns] = await Promise.all([
-    LeadService.list({ page: 1, pageSize: 500 }),
-    ProductService.list({ status: "active" }),
-    CampaignService.list(),
+    LeadService.list({ page: 1, pageSize: 500, ownerId: uid }),
+    ProductService.list({ status: "active", ownerId: uid }),
+    CampaignService.list({ ownerId: uid }),
   ]);
 
   return (

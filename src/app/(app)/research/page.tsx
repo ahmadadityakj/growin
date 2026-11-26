@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { ResearchService } from "@/server/services/research-service";
+import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -21,7 +22,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default async function ResearchPage() {
-  const jobs = await ResearchService.listJobs();
+  const uid = await requireUserId();
+  const jobs = await ResearchService.listJobs(uid);
 
   return (
     <div>

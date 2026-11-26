@@ -135,10 +135,14 @@ export const followupSequences = pgTable(
     productId: uuid("product_id").references(() => products.id),
     channel: channelEnum("channel").notNull(),
     isActive: boolean("is_active").notNull().default(true),
+    ownerId: uuid("owner_id").references(() => users.id),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },
-  (t) => [index("followup_sequences_campaign_idx").on(t.campaignId)]
+  (t) => [
+    index("followup_sequences_campaign_idx").on(t.campaignId),
+    index("followup_sequences_owner_idx").on(t.ownerId),
+  ]
 );
 
 export const followupSteps = pgTable(

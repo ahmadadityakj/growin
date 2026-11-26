@@ -16,21 +16,21 @@ export async function saveIntegration(
   name: string,
   credentials: Record<string, string>
 ) {
-  await requireAuth();
-  await IntegrationService.upsertCredentials(provider, name, credentials);
+  const session = await requireAuth();
+  await IntegrationService.upsertCredentials(provider, name, credentials, undefined, session.user.id);
   revalidatePath("/integrations");
 }
 
 export async function testIntegration(provider: ProviderKey) {
-  await requireAuth();
-  const result = await IntegrationService.testConnection(provider);
-  await IntegrationService.setStatus(provider, result.ok ? "active" : "error", result.detail);
+  const session = await requireAuth();
+  const result = await IntegrationService.testConnection(provider, session.user.id);
+  await IntegrationService.setStatus(provider, result.ok ? "active" : "error", result.detail, session.user.id);
   revalidatePath("/integrations");
   return result;
 }
 
 export async function deactivateIntegration(provider: ProviderKey) {
-  await requireAuth();
-  await IntegrationService.setStatus(provider, "inactive");
+  const session = await requireAuth();
+  await IntegrationService.setStatus(provider, "inactive", undefined, session.user.id);
   revalidatePath("/integrations");
 }

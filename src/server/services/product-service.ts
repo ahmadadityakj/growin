@@ -24,8 +24,9 @@ export const productInputSchema = z.object({
 export type ProductInput = z.infer<typeof productInputSchema>;
 
 export class ProductService {
-  static async list(params?: { search?: string; status?: string }) {
+  static async list(params?: { search?: string; status?: string; ownerId?: string }) {
     const conditions = [isNull(products.deletedAt)];
+    if (params?.ownerId) conditions.push(eq(products.ownerId, params.ownerId));
     if (params?.search) {
       conditions.push(ilike(products.name, `%${params.search}%`));
     }
@@ -41,9 +42,9 @@ export class ProductService {
       .orderBy(desc(products.createdAt));
   }
 
-  static async getById(id: string) {
+  static async getById(id: string, ownerId?: string) {
     return db.query.products.findFirst({
-      where: and(eq(products.id, id), isNull(products.deletedAt)),
+      where: and(eq(products.id, id), isNull(products.deletedAt), ownerId ? eq(products.ownerId, ownerId) : undefined),
     });
   }
 
@@ -51,25 +52,25 @@ export class ProductService {
     const { assertTrialLimit } = await import("@/lib/billing");
     await assertTrialLimit(userId, "product");
     const data = productInputSchema.parse(input);
-    const [created] = await db.insert(products).values(data).returning();
+    const [created] = await db.insert(products).values({ ...data, ownerId: userId ?? null }).returning();
     return created;
   }
 
-  static async update(id: string, input: ProductInput) {
+  static async update(id: string, input: ProductInput, ownerId?: string) {
     const data = productInputSchema.parse(input);
     const [updated] = await db
       .update(products)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(products.id, id))
+      .where(and(eq(products.id, id), ownerId ? eq(products.ownerId, ownerId) : undefined))
       .returning();
     return updated;
   }
 
-  static async softDelete(id: string) {
+  static async softDelete(id: string, ownerId?: string) {
     await db
       .update(products)
       .set({ deletedAt: new Date() })
-      .where(eq(products.id, id));
+      .where(and(eq(products.id, id), ownerId ? eq(products.ownerId, ownerId) : undefined));
   }
 
   static async getKnowledge(productId: string) {

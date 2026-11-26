@@ -1,12 +1,14 @@
 import { CampaignService } from "@/server/services/campaign-service";
 import { ProductService } from "@/server/services/product-service";
+import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { ResearchForm } from "./research-form";
 
 export default async function NewResearchPage() {
+  const uid = await requireUserId();
   const [campaigns, products] = await Promise.all([
-    CampaignService.list(),
-    ProductService.list({ status: "active" }),
+    CampaignService.list({ ownerId: uid }),
+    ProductService.list({ status: "active", ownerId: uid }),
   ]);
 
   return (

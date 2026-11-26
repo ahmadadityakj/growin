@@ -56,8 +56,8 @@ export async function deleteLeads(ids: string[]) {
 }
 
 export async function createTag(name: string) {
-  await requireAuth();
-  const tag = await LeadService.createTag(name);
+  const session = await requireAuth();
+  const tag = await LeadService.createTag(name, undefined, session.user.id);
   revalidatePath("/leads");
   return tag?.id;
 }

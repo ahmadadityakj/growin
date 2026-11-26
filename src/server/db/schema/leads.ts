@@ -65,6 +65,7 @@ export const leads = pgTable(
     status: leadStatusEnum("status").notNull().default("new"),
     score: integer("score"),
     assignedUserId: uuid("assigned_user_id").references(() => users.id),
+    ownerId: uuid("owner_id").references(() => users.id),
     dealValue: integer("deal_value"), // estimasi nilai kontrak (Rp / bulan)
     lostReason: text("lost_reason"),
     contactVerified: boolean("contact_verified").notNull().default(false),
@@ -82,6 +83,7 @@ export const leads = pgTable(
     index("leads_industry_idx").on(t.industry),
     index("leads_business_name_idx").on(t.businessName),
     index("leads_next_followup_idx").on(t.nextFollowUpAt),
+    index("leads_owner_idx").on(t.ownerId),
   ]
 );
 
@@ -103,12 +105,17 @@ export const leadContacts = pgTable(
   (t) => [index("lead_contacts_lead_idx").on(t.leadId)]
 );
 
-export const tags = pgTable("tags", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull().unique(),
-  color: text("color"),
-  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+export const tags = pgTable(
+  "tags",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    color: text("color"),
+    ownerId: uuid("owner_id").references(() => users.id),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("tags_name_owner_unique").on(t.name, t.ownerId)]
+);
 
 export const leadTags = pgTable(
   "lead_tags",

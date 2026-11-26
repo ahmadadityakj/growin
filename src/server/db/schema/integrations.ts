@@ -1,6 +1,7 @@
 import {
   pgTable, uuid, text, timestamp, boolean, jsonb, pgEnum, index,
 } from "drizzle-orm/pg-core";
+import { users } from "./auth";
 
 export const integrationProviderEnum = pgEnum("integration_provider", [
   "resend",
@@ -28,6 +29,7 @@ export const integrations = pgTable(
     config: jsonb("config").$type<Record<string, unknown>>().default({}),
     status: integrationStatusEnum("status").notNull().default("inactive"),
     lastCheckedAt: timestamp("last_checked_at", { mode: "date" }),
+    ownerId: uuid("owner_id").references(() => users.id),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
   },

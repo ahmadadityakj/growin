@@ -25,6 +25,7 @@ function greeting(hour: number) {
 export default async function DashboardPage() {
   await connection();
   const session = await auth();
+  const uid = session!.user.id;
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const now = new Date();
 
@@ -39,36 +40,45 @@ export default async function DashboardPage() {
     campaignRows,
     activities,
   ] = await Promise.all([
-    db.select({ c: sql<number>`count(*)::int` }).from(leads).where(isNull(leads.deletedAt)),
+    db.select({ c: sql<number>`count(*)::int` }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid))),
     db
       .select({ c: sql<number>`count(*)::int` })
       .from(leads)
-      .where(and(isNull(leads.deletedAt), gte(leads.createdAt, weekAgo))),
+      .where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid), gte(leads.createdAt, weekAgo))),
     db
       .select({ c: sql<number>`count(*)::int` })
       .from(leads)
-      .where(and(isNull(leads.deletedAt), eq(leads.status, "qualified"))),
+      .where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid), eq(leads.status, "qualified"))),
     db
       .select({ c: sql<number>`count(*)::int` })
       .from(leads)
-      .where(and(isNull(leads.deletedAt), eq(leads.status, "converted"))),
-    CampaignService.countActive(),
+      .where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid), eq(leads.status, "converted"))),
+    CampaignService.countActive(uid),
     db
       .select({ c: sql<number>`count(*)::int` })
       .from(outreachMessages)
       .where(
-        sql`${outreachMessages.status} in ('sent','delivered','replied')`
+        and(
+          eq(outreachMessages.createdById, uid),
+          sql`${outreachMessages.status} in ('sent','delivered','replied')`
+        )
       ),
-    db.select({ c: sql<number>`count(*)::int` }).from(outreachMessages).where(eq(outreachMessages.status, "replied")),
+    db.select({ c: sql<number>`count(*)::int` }).from(outreachMessages).where(and(eq(outreachMessages.status, "replied"), eq(outreachMessages.createdById, uid))),
     db
       .select()
       .from(campaigns)
-      .where(and(isNull(campaigns.deletedAt), eq(campaigns.status, "active")))
+      .where(and(isNull(campaigns.deletedAt), eq(campaigns.status, "active"), eq(campaigns.createdById, uid)))
       .orderBy(desc(campaigns.createdAt))
       .limit(5),
     db
-      .select()
+      .select({
+        id: leadActivities.id,
+        description: leadActivities.description,
+        createdAt: leadActivities.createdAt,
+      })
       .from(leadActivities)
+      .innerJoin(leads, eq(leadActivities.leadId, leads.id))
+      .where(eq(leads.ownerId, uid))
       .orderBy(desc(leadActivities.createdAt))
       .limit(8),
   ]);

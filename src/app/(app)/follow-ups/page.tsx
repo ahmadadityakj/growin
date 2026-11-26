@@ -1,7 +1,8 @@
 import { FollowUpService } from "@/server/services/followup-service";
+import { requireUserId } from "@/lib/session";
 import { db } from "@/server/db";
 import { campaigns, products, outreachTemplates, leads } from "@/server/db/schema";
-import { desc, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -32,14 +33,15 @@ const SCHED_LABELS: Record<string, string> = {
 };
 
 export default async function FollowUpsPage() {
+  const uid = await requireUserId();
   const [sequences, schedules, campaignList, productList, templateList, leadList] =
     await Promise.all([
-      FollowUpService.listSequences(),
-      FollowUpService.listSchedules(),
-      db.select({ id: campaigns.id, name: campaigns.name }).from(campaigns),
-      db.select({ id: products.id, name: products.name }).from(products).where(isNull(products.deletedAt)),
-      db.select({ id: outreachTemplates.id, name: outreachTemplates.name, channel: outreachTemplates.channel }).from(outreachTemplates).where(isNull(outreachTemplates.deletedAt)),
-      db.select({ id: leads.id, businessName: leads.businessName }).from(leads).where(isNull(leads.deletedAt)).orderBy(desc(leads.createdAt)).limit(300),
+      FollowUpService.listSequences(uid),
+      FollowUpService.listSchedules({ ownerId: uid }),
+      db.select({ id: campaigns.id, name: campaigns.name }).from(campaigns).where(eq(campaigns.createdById, uid)),
+      db.select({ id: products.id, name: products.name }).from(products).where(and(isNull(products.deletedAt), eq(products.ownerId, uid))),
+      db.select({ id: outreachTemplates.id, name: outreachTemplates.name, channel: outreachTemplates.channel }).from(outreachTemplates).where(and(isNull(outreachTemplates.deletedAt), eq(outreachTemplates.createdById, uid))),
+      db.select({ id: leads.id, businessName: leads.businessName }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid))).orderBy(desc(leads.createdAt)).limit(300),
     ]);
 
   return (

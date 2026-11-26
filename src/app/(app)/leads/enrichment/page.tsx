@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { db } from "@/server/db";
 import { leads } from "@/server/db/schema";
+import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -12,10 +13,11 @@ export const metadata = { title: "Enrichment Kontak | Growin" };
 
 export default async function EnrichmentPage() {
   // lead yang kontaknya belum verified, prioritaskan yang minim kontak
+  const uid = await requireUserId();
   const rows = await db
     .select()
     .from(leads)
-    .where(and(isNull(leads.deletedAt), eq(leads.contactVerified, false)))
+    .where(and(isNull(leads.deletedAt), eq(leads.contactVerified, false), eq(leads.ownerId, uid)))
     .orderBy(desc(leads.score), desc(leads.createdAt))
     .limit(100);
 

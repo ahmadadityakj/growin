@@ -1,4 +1,5 @@
 import { IntegrationService, PROVIDER_FIELDS, type ProviderKey } from "@/server/services/integration-service";
+import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +23,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default async function IntegrationsPage() {
-  const rows = await IntegrationService.list();
+  const uid = await requireUserId();
+  const rows = await IntegrationService.list(uid);
   const byProvider = new Map(rows.map((r) => [r.provider, r]));
 
   return (

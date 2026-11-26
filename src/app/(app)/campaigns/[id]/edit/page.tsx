@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CampaignService } from "@/server/services/campaign-service";
 import { ProductService } from "@/server/services/product-service";
+import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { CampaignForm } from "../../campaign-form";
 import { updateCampaign } from "../../actions";
@@ -18,9 +19,10 @@ export default async function EditCampaignPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const uid = await requireUserId();
   const [campaign, products] = await Promise.all([
-    CampaignService.getById(id),
-    ProductService.list({ status: "active" }),
+    CampaignService.getById(id, uid),
+    ProductService.list({ status: "active", ownerId: uid }),
   ]);
   if (!campaign) notFound();
 

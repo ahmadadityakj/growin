@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ProductService } from "@/server/services/product-service";
+import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { ProductForm } from "../../product-form";
 import { updateProduct } from "../../actions";
@@ -12,8 +13,9 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const uid = await requireUserId();
   const [product, knowledge] = await Promise.all([
-    ProductService.getById(id),
+    ProductService.getById(id, uid),
     ProductService.getKnowledge(id),
   ]);
   if (!product) notFound();

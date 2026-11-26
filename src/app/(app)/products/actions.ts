@@ -22,15 +22,15 @@ export async function createProduct(input: ProductInput) {
 }
 
 export async function updateProduct(id: string, input: ProductInput) {
-  await requireAuth();
-  await ProductService.update(id, input);
+  const session = await requireAuth();
+  await ProductService.update(id, input, session.user.id);
   revalidatePath("/products");
   redirect("/products");
 }
 
 export async function deleteProduct(id: string) {
-  await requireAuth();
-  await ProductService.softDelete(id);
+  const session = await requireAuth();
+  await ProductService.softDelete(id, session.user.id);
   revalidatePath("/products");
 }
 

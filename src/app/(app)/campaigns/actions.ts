@@ -19,14 +19,14 @@ export async function createCampaign(input: CampaignInput) {
 }
 
 export async function updateCampaign(id: string, input: CampaignInput) {
-  await requireAuth();
-  await CampaignService.update(id, input);
+  const session = await requireAuth();
+  await CampaignService.update(id, input, session.user.id);
   revalidatePath("/campaigns");
   redirect("/campaigns");
 }
 
 export async function deleteCampaign(id: string) {
-  await requireAuth();
-  await CampaignService.softDelete(id);
+  const session = await requireAuth();
+  await CampaignService.softDelete(id, session.user.id);
   revalidatePath("/campaigns");
 }

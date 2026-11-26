@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Package, Pencil, Trash2 } from "lucide-react";
 import { ProductService } from "@/server/services/product-service";
+import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -19,7 +20,8 @@ export default async function ProductsPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const items = await ProductService.list({ search: q });
+  const uid = await requireUserId();
+  const items = await ProductService.list({ search: q, ownerId: uid });
 
   return (
     <div>

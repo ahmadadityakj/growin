@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ResearchService } from "@/server/services/research-service";
+import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,8 +23,9 @@ export default async function ResearchJobPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const uid = await requireUserId();
   const [job, results] = await Promise.all([
-    ResearchService.getJob(id),
+    ResearchService.getJob(id, uid),
     ResearchService.getJobResults(id),
   ]);
   if (!job) notFound();

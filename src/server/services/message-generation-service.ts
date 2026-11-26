@@ -106,6 +106,7 @@ Kembalikan JSON array ${data.variations} objek: [{"subject": string|null, "body"
       leadId: data.leadId,
       productId: data.productId,
       campaignId: data.campaignId,
+      userId: userId ?? null,
     });
 
     const parsed = parseModelJson<GeneratedMessage[]>(text);
@@ -149,10 +150,11 @@ export const templateInputSchema = z.object({
 export type TemplateInput = z.infer<typeof templateInputSchema>;
 
 export class TemplateService {
-  static async list(params?: { channel?: string; productId?: string }) {
+  static async list(params?: { channel?: string; productId?: string; ownerId?: string }) {
     const conds = [isNull(outreachTemplates.deletedAt)];
     if (params?.channel) conds.push(eq(outreachTemplates.channel, params.channel as "email" | "whatsapp"));
     if (params?.productId) conds.push(eq(outreachTemplates.productId, params.productId));
+    if (params?.ownerId) conds.push(eq(outreachTemplates.createdById, params.ownerId));
     return db
       .select()
       .from(outreachTemplates)
@@ -175,20 +177,20 @@ export class TemplateService {
     return row;
   }
 
-  static async update(id: string, input: TemplateInput) {
+  static async update(id: string, input: TemplateInput, ownerId?: string) {
     const data = templateInputSchema.parse(input);
     const [row] = await db
       .update(outreachTemplates)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(outreachTemplates.id, id))
+      .where(and(eq(outreachTemplates.id, id), ownerId ? eq(outreachTemplates.createdById, ownerId) : undefined))
       .returning();
     return row;
   }
 
-  static async softDelete(id: string) {
+  static async softDelete(id: string, ownerId?: string) {
     await db
       .update(outreachTemplates)
       .set({ deletedAt: new Date() })
-      .where(eq(outreachTemplates.id, id));
+      .where(and(eq(outreachTemplates.id, id), ownerId ? eq(outreachTemplates.createdById, ownerId) : undefined));
   }
 }

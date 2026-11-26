@@ -1,4 +1,5 @@
 import { AnalyticsService } from "@/server/services/analytics-service";
+import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,14 +43,15 @@ const MSG_LABELS: Record<string, string> = {
 };
 
 export default async function ReportsPage() {
+  const uid = await requireUserId();
   const [kpi, byStatus, byCampaign, outreach, perMonth, aiUsage, searchUsage] = await Promise.all([
-    AnalyticsService.kpi(),
-    AnalyticsService.leadsByStatus(),
-    AnalyticsService.leadsByCampaign(),
-    AnalyticsService.outreachByStatus(),
-    AnalyticsService.leadsPerMonth(),
-    AnalyticsService.aiUsage(),
-    AnalyticsService.searchUsage(),
+    AnalyticsService.kpi(uid),
+    AnalyticsService.leadsByStatus(uid),
+    AnalyticsService.leadsByCampaign(uid),
+    AnalyticsService.outreachByStatus(uid),
+    AnalyticsService.leadsPerMonth(uid),
+    AnalyticsService.aiUsage(uid),
+    AnalyticsService.searchUsage(uid),
   ]);
 
   const statusData = byStatus.map((r: { status: string; count: number }) => ({

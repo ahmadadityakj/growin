@@ -27,14 +27,14 @@ export async function createTemplate(input: TemplateInput) {
 }
 
 export async function updateTemplate(id: string, input: TemplateInput) {
-  await requireAuth();
-  await TemplateService.update(id, input);
+  const session = await requireAuth();
+  await TemplateService.update(id, input, session.user.id);
   revalidatePath("/outreach/templates");
 }
 
 export async function deleteTemplate(id: string) {
-  await requireAuth();
-  await TemplateService.softDelete(id);
+  const session = await requireAuth();
+  await TemplateService.softDelete(id, session.user.id);
   revalidatePath("/outreach/templates");
 }
 
@@ -46,20 +46,20 @@ export async function createDraftMessage(input: DraftInput) {
 }
 
 export async function approveMessages(ids: string[]) {
-  await requireAuth();
-  await OutreachService.approve(ids);
+  const session = await requireAuth();
+  await OutreachService.approve(ids, session.user.id);
   revalidatePath("/outreach/messages");
 }
 
 export async function rejectMessages(ids: string[]) {
-  await requireAuth();
-  await OutreachService.reject(ids);
+  const session = await requireAuth();
+  await OutreachService.reject(ids, session.user.id);
   revalidatePath("/outreach/messages");
 }
 
 export async function queueApprovedMessages() {
-  await requireAuth();
-  const n = await OutreachService.queueApproved();
+  const session = await requireAuth();
+  const n = await OutreachService.queueApproved(session.user.id);
   revalidatePath("/outreach/messages");
   return n;
 }

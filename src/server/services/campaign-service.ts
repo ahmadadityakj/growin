@@ -25,8 +25,9 @@ export const campaignInputSchema = z.object({
 export type CampaignInput = z.infer<typeof campaignInputSchema>;
 
 export class CampaignService {
-  static async list(params?: { search?: string; status?: string; productId?: string }) {
+  static async list(params?: { search?: string; status?: string; productId?: string; ownerId?: string }) {
     const conditions = [isNull(campaigns.deletedAt)];
+    if (params?.ownerId) conditions.push(eq(campaigns.createdById, params.ownerId));
     if (params?.search) conditions.push(ilike(campaigns.name, `%${params.search}%`));
     if (params?.status)
       conditions.push(
@@ -49,9 +50,9 @@ export class CampaignService {
       .orderBy(desc(campaigns.createdAt));
   }
 
-  static async getById(id: string) {
+  static async getById(id: string, ownerId?: string) {
     const campaign = await db.query.campaigns.findFirst({
-      where: and(eq(campaigns.id, id), isNull(campaigns.deletedAt)),
+      where: and(eq(campaigns.id, id), isNull(campaigns.deletedAt), ownerId ? eq(campaigns.createdById, ownerId) : undefined),
     });
     if (!campaign) return null;
     const channels = await db
@@ -76,7 +77,7 @@ export class CampaignService {
     return created;
   }
 
-  static async update(id: string, input: CampaignInput) {
+  static async update(id: string, input: CampaignInput, ownerId?: string) {
     const { channels, startDate, endDate, ...rest } = campaignInputSchema.parse(input);
     const [updated] = await db
       .update(campaigns)
@@ -86,7 +87,7 @@ export class CampaignService {
         endDate: endDate ? new Date(endDate) : null,
         updatedAt: new Date(),
       })
-      .where(eq(campaigns.id, id))
+      .where(and(eq(campaigns.id, id), ownerId ? eq(campaigns.createdById, ownerId) : undefined))
       .returning();
     await this.syncChannels(id, channels);
     return updated;
@@ -105,15 +106,22 @@ export class CampaignService {
     }
   }
 
-  static async softDelete(id: string) {
-    await db.update(campaigns).set({ deletedAt: new Date() }).where(eq(campaigns.id, id));
+  static async softDelete(id: string, ownerId?: string) {
+    await db
+      .update(campaigns)
+      .set({ deletedAt: new Date() })
+      .where(and(eq(campaigns.id, id), ownerId ? eq(campaigns.createdById, ownerId) : undefined));
   }
 
-  static async countActive() {
+  static async countActive(ownerId?: string) {
     const [row] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(campaigns)
-      .where(and(eq(campaigns.status, "active"), isNull(campaigns.deletedAt)));
+      .where(and(
+        eq(campaigns.status, "active"),
+        isNull(campaigns.deletedAt),
+        ownerId ? eq(campaigns.createdById, ownerId) : undefined
+      ));
     return row.count;
   }
 }

@@ -74,6 +74,7 @@ export const researchJobs = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     taskId: uuid("task_id").references(() => aiTasks.id),
     campaignId: uuid("campaign_id").references(() => campaigns.id),
+    userId: uuid("user_id").references(() => users.id),
     productId: uuid("product_id").references(() => products.id),
     instruction: text("instruction").notNull(),
     targetQuantity: integer("target_quantity").default(50),
@@ -168,6 +169,7 @@ export const aiGenerations = pgTable(
     leadId: uuid("lead_id").references(() => leads.id),
     productId: uuid("product_id").references(() => products.id),
     campaignId: uuid("campaign_id").references(() => campaigns.id),
+    userId: uuid("user_id").references(() => users.id),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [

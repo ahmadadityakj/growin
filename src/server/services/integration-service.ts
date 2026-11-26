@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/server/db";
 import { integrations, integrationLogs } from "@/server/db/schema";
 import { encrypt, decrypt } from "@/lib/crypto";
@@ -36,8 +36,12 @@ export const PROVIDER_FIELDS: Record<ProviderKey, { key: string; label: string; 
 };
 
 export class IntegrationService {
-  static async list() {
-    return db.select().from(integrations).orderBy(integrations.provider);
+  static async list(ownerId?: string) {
+    return db
+      .select()
+      .from(integrations)
+      .where(ownerId ? eq(integrations.ownerId, ownerId) : undefined)
+      .orderBy(integrations.provider);
   }
 
   /** Credentials tersimpan terenkripsi per-field di jsonb. */
@@ -45,10 +49,11 @@ export class IntegrationService {
     provider: ProviderKey,
     name: string,
     credentials: Record<string, string>,
-    config?: Record<string, unknown>
+    config?: Record<string, unknown>,
+    ownerId?: string
   ) {
     const existing = await db.query.integrations.findFirst({
-      where: eq(integrations.provider, provider),
+      where: and(eq(integrations.provider, provider), ownerId ? eq(integrations.ownerId, ownerId) : isNull(integrations.ownerId)),
     });
 
     const encrypted: Record<string, string> = {};
@@ -75,14 +80,17 @@ export class IntegrationService {
     }
     const [row] = await db
       .insert(integrations)
-      .values({ provider, name, credentials: encrypted, config: config ?? {}, status: "active" })
+      .values({ provider, name, credentials: encrypted, config: config ?? {}, status: "active", ownerId: ownerId ?? null })
       .returning();
     return row;
   }
 
-  static async getCredentials(provider: ProviderKey): Promise<Record<string, string>> {
+  static async getCredentials(provider: ProviderKey, ownerId?: string): Promise<Record<string, string>> {
     const row = await db.query.integrations.findFirst({
-      where: eq(integrations.provider, provider),
+      where: and(
+        eq(integrations.provider, provider),
+        ownerId ? eq(integrations.ownerId, ownerId) : undefined
+      ),
     });
     if (!row?.credentials) return {};
     const out: Record<string, string> = {};
@@ -102,8 +110,10 @@ export class IntegrationService {
     return out;
   }
 
-  static async setStatus(provider: ProviderKey, status: "active" | "inactive" | "error", detail?: string) {
-    const row = await db.query.integrations.findFirst({ where: eq(integrations.provider, provider) });
+  static async setStatus(provider: ProviderKey, status: "active" | "inactive" | "error", detail?: string, ownerId?: string) {
+    const row = await db.query.integrations.findFirst({
+      where: and(eq(integrations.provider, provider), ownerId ? eq(integrations.ownerId, ownerId) : isNull(integrations.ownerId)),
+    });
     if (!row) return;
     await db
       .update(integrations)
@@ -118,12 +128,12 @@ export class IntegrationService {
   }
 
   /** Test koneksi provider; return { ok, detail }. */
-  static async testConnection(provider: ProviderKey): Promise<{ ok: boolean; detail: string }> {
+  static async testConnection(provider: ProviderKey, ownerId?: string): Promise<{ ok: boolean; detail: string }> {
     try {
       switch (provider) {
         case "resend": {
           const { ResendProvider } = await import("../providers/messaging/resend");
-          const creds = await this.getCredentials("resend");
+          const creds = await this.getCredentials("resend", ownerId);
           const key = creds.apiKey || env.RESEND_API_KEY;
           if (!key) return { ok: false, detail: "API key kosong" };
           const res = await fetch("https://api.resend.com/domains", {
@@ -134,7 +144,7 @@ export class IntegrationService {
             : { ok: false, detail: `Resend error ${res.status}` };
         }
         case "fonnte": {
-          const creds = await this.getCredentials("fonnte");
+          const creds = await this.getCredentials("fonnte", ownerId);
           const token = creds.token || env.FONNTE_TOKEN;
           if (!token) return { ok: false, detail: "Token kosong" };
           const res = await fetch("https://api.fonnte.com/device", {
@@ -147,7 +157,7 @@ export class IntegrationService {
             : { ok: false, detail: `Fonnte: ${data.reason ?? res.status}` };
         }
         case "openai": {
-          const key = (await this.getCredentials("openai")).apiKey || env.OPENAI_API_KEY;
+          const key = (await this.getCredentials("openai", ownerId)).apiKey || env.OPENAI_API_KEY;
           if (!key) return { ok: false, detail: "API key kosong" };
           const res = await fetch("https://api.openai.com/v1/models", {
             headers: { Authorization: `Bearer ${key}` },
@@ -158,7 +168,7 @@ export class IntegrationService {
         }
         case "brave":
         case "tavily": {
-          const creds = await this.getCredentials(provider);
+          const creds = await this.getCredentials(provider, ownerId);
           const key = creds.apiKey || (provider === "brave" ? env.BRAVE_SEARCH_API_KEY : env.TAVILY_API_KEY);
           if (!key) return { ok: false, detail: "API key kosong" };
           const { getSearchProvider } = await import("../providers/search");

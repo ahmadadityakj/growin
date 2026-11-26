@@ -1,5 +1,6 @@
-import { desc, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/server/db";
+import { requireUserId } from "@/lib/session";
 import { leads } from "@/server/db/schema";
 import { PageHeader } from "@/components/shared/page-header";
 import { PipelineBoard, type PipelineLead } from "./kanban";
@@ -8,10 +9,11 @@ import { STAGES, stageOf, fmtRp } from "./stages";
 export const metadata = { title: "Pipeline | Growin" };
 
 export default async function PipelinePage() {
+  const uid = await requireUserId();
   const rows = await db
     .select()
     .from(leads)
-    .where(isNull(leads.deletedAt))
+    .where(and(isNull(leads.deletedAt), eq(leads.ownerId, uid)))
     .orderBy(desc(leads.updatedAt))
     .limit(500);
 

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { LeadService } from "@/server/services/lead-service";
+import { requireUserId } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { LeadForm } from "../../lead-form";
 import { updateLead } from "../../actions";
@@ -10,7 +11,8 @@ export default async function EditLeadPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const lead = await LeadService.getById(id);
+  const uid = await requireUserId();
+  const lead = await LeadService.getById(id, uid);
   if (!lead) notFound();
 
   const bound = updateLead.bind(null, id);

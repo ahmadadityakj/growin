@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { aiTasks, aiTaskLogs, leads, outreachMessages, campaigns, researchJobs } from "@/server/db/schema";
 import { hasOpenAI, getOpenAI, MODEL_GENERATION, parseModelJson } from "@/server/providers/openai";
@@ -53,12 +53,19 @@ function heuristicParse(instruction: string): ParsedTask {
 }
 
 export class TaskService {
-  static async list() {
-    return db.select().from(aiTasks).orderBy(desc(aiTasks.createdAt)).limit(50);
+  static async list(userId?: string) {
+    return db
+      .select()
+      .from(aiTasks)
+      .where(userId ? eq(aiTasks.userId, userId) : undefined)
+      .orderBy(desc(aiTasks.createdAt))
+      .limit(50);
   }
 
-  static async getById(id: string) {
-    const task = await db.query.aiTasks.findFirst({ where: eq(aiTasks.id, id) });
+  static async getById(id: string, userId?: string) {
+    const task = await db.query.aiTasks.findFirst({
+      where: and(eq(aiTasks.id, id), userId ? eq(aiTasks.userId, userId) : undefined),
+    });
     if (!task) return null;
     const logs = await db
       .select()

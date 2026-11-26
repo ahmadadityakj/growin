@@ -41,6 +41,7 @@ export const leadInputSchema = z.object({
 export type LeadInput = z.infer<typeof leadInputSchema>;
 
 export type LeadListParams = {
+  ownerId?: string;
   search?: string;
   status?: string;
   industry?: string;
@@ -54,6 +55,7 @@ export type LeadListParams = {
 export class LeadService {
   private static buildFilters(params: LeadListParams): SQL[] {
     const conds: SQL[] = [isNull(leads.deletedAt)];
+    if (params.ownerId) conds.push(eq(leads.ownerId, params.ownerId));
     if (params.search) {
       const s = `%${params.search}%`;
       conds.push(
@@ -106,9 +108,13 @@ export class LeadService {
     };
   }
 
-  static async getById(id: string) {
+  static async getById(id: string, ownerId?: string) {
     const lead = await db.query.leads.findFirst({
-      where: and(eq(leads.id, id), isNull(leads.deletedAt)),
+      where: and(
+        eq(leads.id, id),
+        isNull(leads.deletedAt),
+        ownerId ? eq(leads.ownerId, ownerId) : undefined
+      ),
     });
     if (!lead) return null;
 
@@ -170,6 +176,7 @@ export class LeadService {
       .values({
         ...rest,
         source,
+        ownerId: userId ?? null,
         nextFollowUpAt: nextFollowUpAt ? new Date(nextFollowUpAt) : null,
       })
       .returning();
@@ -220,18 +227,21 @@ export class LeadService {
   }
 
   // ---- Tags ----
-  static async listTags() {
-    return db.select().from(tags).orderBy(tags.name);
+  static async listTags(ownerId?: string) {
+    const conds = ownerId ? [eq(tags.ownerId, ownerId)] : [];
+    return db.select().from(tags).where(and(...conds)).orderBy(tags.name);
   }
 
-  static async createTag(name: string, color?: string) {
+  static async createTag(name: string, color?: string, ownerId?: string) {
     const [tag] = await db
       .insert(tags)
-      .values({ name: name.trim(), color })
-      .onConflictDoNothing({ target: tags.name })
+      .values({ name: name.trim(), color, ownerId: ownerId ?? null })
+      .onConflictDoNothing({ target: [tags.name, tags.ownerId] })
       .returning();
     if (tag) return tag;
-    return db.query.tags.findFirst({ where: eq(tags.name, name.trim()) });
+    return db.query.tags.findFirst({
+      where: and(eq(tags.name, name.trim()), ownerId ? eq(tags.ownerId, ownerId) : isNull(tags.ownerId)),
+    });
   }
 
   static async addTagToLead(leadId: string, tagId: string, userId?: string) {
@@ -285,8 +295,9 @@ export class LeadService {
   }
 
   // ---- Deduplication ----
-  static async findDuplicates(input: { email?: string | null; phone?: string | null; businessName?: string }) {
+  static async findDuplicates(input: { email?: string | null; phone?: string | null; businessName?: string; ownerId?: string }) {
     const conds: SQL[] = [isNull(leads.deletedAt)];
+    if (input.ownerId) conds.push(eq(leads.ownerId, input.ownerId));
     const orConds: SQL[] = [];
     if (input.email) orConds.push(eq(leads.email, input.email));
     if (input.phone) orConds.push(eq(leads.phone, input.phone));
@@ -315,7 +326,7 @@ export class LeadService {
       const email = (row.email ?? "").trim() || null;
       const phone = (row.phone ?? row.telepon ?? "").trim() || null;
 
-      const dupes = await this.findDuplicates({ email, phone, businessName: name });
+      const dupes = await this.findDuplicates({ email, phone, businessName: name, ownerId: userId });
       if (dupes.length > 0) {
         skipped++;
         continue;

@@ -65,30 +65,31 @@ export class OutreachService {
       .where(eq(outreachMessages.id, id));
   }
 
-  static async approve(ids: string[]) {
+  static async approve(ids: string[], ownerId?: string) {
     await db
       .update(outreachMessages)
       .set({ status: "approved", updatedAt: new Date() })
-      .where(and(inArray(outreachMessages.id, ids), eq(outreachMessages.status, "pending_approval")));
+      .where(and(inArray(outreachMessages.id, ids), eq(outreachMessages.status, "pending_approval"), ownerId ? eq(outreachMessages.createdById, ownerId) : undefined));
     for (const id of ids) await this.log(id, "approved");
   }
 
-  static async reject(ids: string[]) {
+  static async reject(ids: string[], ownerId?: string) {
     await db
       .update(outreachMessages)
       .set({ status: "cancelled", updatedAt: new Date() })
-      .where(and(inArray(outreachMessages.id, ids), eq(outreachMessages.status, "pending_approval")));
+      .where(and(inArray(outreachMessages.id, ids), eq(outreachMessages.status, "pending_approval"), ownerId ? eq(outreachMessages.createdById, ownerId) : undefined));
     for (const id of ids) await this.log(id, "rejected");
   }
 
   /** Antre pesan yang approved & sudah waktunya kirim ke worker. */
-  static async queueApproved() {
+  static async queueApproved(ownerId?: string) {
     const { enqueue, QUEUES } = await import("../jobs/queue");
     const rows = await db
       .select()
       .from(outreachMessages)
       .where(
         and(
+          ownerId ? eq(outreachMessages.createdById, ownerId) : undefined,
           eq(outreachMessages.status, "approved"),
           // scheduledAt null atau sudah lewat
           // drizzle: scheduledAt <= now OR scheduledAt is null
@@ -131,7 +132,7 @@ export class OutreachService {
 
     try {
       const { getMessagingProvider } = await import("../providers/messaging");
-      const provider = await getMessagingProvider(msg.channel);
+      const provider = await getMessagingProvider(msg.channel, msg.createdById ?? undefined);
       const result = await provider.send({
         recipient: msg.recipient,
         subject: msg.subject ?? undefined,

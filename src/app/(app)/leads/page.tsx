@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Users, Upload, Download, UserCheck } from "lucide-react";
 import { LeadService } from "@/server/services/lead-service";
+import { requireUserId } from "@/lib/session";
 import { CampaignService } from "@/server/services/campaign-service";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -20,6 +21,7 @@ export default async function LeadsPage({
 }) {
   const sp = await searchParams;
   const page = Number(sp.page ?? "1") || 1;
+  const uid = await requireUserId();
 
   const [result, allTags, campaignRows] = await Promise.all([
     LeadService.list({
@@ -31,9 +33,10 @@ export default async function LeadsPage({
       tagId: sp.tag,
       page,
       pageSize: 20,
+      ownerId: uid,
     }),
-    LeadService.listTags(),
-    CampaignService.list(),
+    LeadService.listTags(uid),
+    CampaignService.list({ ownerId: uid }),
   ]);
 
   function pageUrl(p: number) {

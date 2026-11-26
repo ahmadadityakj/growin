@@ -1,4 +1,5 @@
-import { pgTable, uuid, text, timestamp, boolean, jsonb, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, boolean, jsonb, pgEnum, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { users } from "./auth";
 
 export const productStatusEnum = pgEnum("product_status", ["draft", "active", "archived"]);
 
@@ -7,7 +8,8 @@ export const products = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
-    slug: text("slug").notNull().unique(),
+    slug: text("slug").notNull(),
+    ownerId: uuid("owner_id").references(() => users.id),
     description: text("description"),
     websiteUrl: text("website_url"),
     category: text("category"),

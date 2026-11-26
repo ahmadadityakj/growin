@@ -123,12 +123,18 @@ function computeQualityScore(r: {
 }
 
 export class ResearchService {
-  static async listJobs() {
-    return db.select().from(researchJobs).orderBy(desc(researchJobs.createdAt));
+  static async listJobs(ownerId?: string) {
+    return db
+      .select()
+      .from(researchJobs)
+      .where(ownerId ? eq(researchJobs.createdById, ownerId) : undefined)
+      .orderBy(desc(researchJobs.createdAt));
   }
 
-  static async getJob(id: string) {
-    return db.query.researchJobs.findFirst({ where: eq(researchJobs.id, id) });
+  static async getJob(id: string, ownerId?: string) {
+    return db.query.researchJobs.findFirst({
+      where: and(eq(researchJobs.id, id), ownerId ? eq(researchJobs.createdById, ownerId) : undefined),
+    });
   }
 
   static async getJobResults(jobId: string) {
@@ -248,6 +254,7 @@ export class ResearchService {
 
         const dup = await this.findLeadDuplicate({
           email: data.email, phone: data.phone, businessName: name, city: data.city,
+          ownerId: job.createdById ?? undefined,
         });
 
         const qualityScore = computeQualityScore({
@@ -319,7 +326,7 @@ export class ResearchService {
   private static async extractLead(
     url: string,
     pageText: string,
-    job: { instruction: string; targetIndustry?: string | null; targetLocation?: string | null }
+    job: { instruction: string; targetIndustry?: string | null; targetLocation?: string | null; createdById?: string | null }
   ): Promise<Extracted | null> {
     const openai = getOpenAI();
     const target = [job.targetIndustry, job.targetLocation].filter(Boolean).join(" di ") || job.instruction;
@@ -359,6 +366,7 @@ ${pageText.slice(0, 6000)}
       output: text.slice(0, 4000),
       tokensIn: res.usage?.prompt_tokens,
       tokensOut: res.usage?.completion_tokens,
+      userId: job.createdById ?? null,
     });
 
     if (!parsed) return null;
@@ -368,6 +376,7 @@ ${pageText.slice(0, 6000)}
 
   static async findLeadDuplicate(dup: {
     email?: string | null; phone?: string | null; businessName?: string | null; city?: string | null;
+    ownerId?: string;
   }) {
     const orConds = [];
     if (dup.email) orConds.push(eq(leads.email, dup.email));
@@ -384,7 +393,11 @@ ${pageText.slice(0, 6000)}
     const rows = await db
       .select()
       .from(leads)
-      .where(and(isNull(leads.deletedAt), or(...orConds)!))
+      .where(and(
+        isNull(leads.deletedAt),
+        dup.ownerId ? eq(leads.ownerId, dup.ownerId) : undefined,
+        or(...orConds)!
+      ))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -397,6 +410,7 @@ ${pageText.slice(0, 6000)}
     if (!result || result.reviewStatus === "approved") return null;
 
     const job = await this.getJob(result.jobId);
+    if (userId && job?.createdById !== userId) return null;
 
     // cek duplikat ulang saat approve; bisnis yang sama bisa ketemu
     // di job lain dan keduanya di-approve
@@ -407,6 +421,7 @@ ${pageText.slice(0, 6000)}
           phone: result.phone,
           businessName: result.businessName,
           city: result.city,
+          ownerId: userId ?? job?.createdById ?? undefined,
         });
 
     if (dup) {
@@ -442,6 +457,7 @@ ${pageText.slice(0, 6000)}
         researchNotes: result.notes,
         score: result.qualityScore,
         status: "new",
+        ownerId: userId ?? job?.createdById ?? null,
       })
       .returning();
 
@@ -482,14 +498,19 @@ ${pageText.slice(0, 6000)}
     return lead;
   }
 
-  static async rejectResult(resultId: string) {
+  static async rejectResult(resultId: string, userId?: string) {
+    const result = await db.query.researchResults.findFirst({
+      where: eq(researchResults.id, resultId),
+    });
+    if (!result) return;
+    if (userId) {
+      const job = await this.getJob(result.jobId);
+      if (job?.createdById !== userId) return;
+    }
     await db
       .update(researchResults)
       .set({ reviewStatus: "rejected" })
       .where(eq(researchResults.id, resultId));
-    const result = await db.query.researchResults.findFirst({
-      where: eq(researchResults.id, resultId),
-    });
     if (result) {
       await db
         .update(researchJobs)
@@ -511,7 +532,11 @@ ${pageText.slice(0, 6000)}
     return created.length;
   }
 
-  static async markJobReviewed(jobId: string) {
+  static async markJobReviewed(jobId: string, userId?: string) {
+    if (userId) {
+      const job = await this.getJob(jobId);
+      if (job?.createdById !== userId) return;
+    }
     await db
       .update(researchJobs)
       .set({ status: "completed" })

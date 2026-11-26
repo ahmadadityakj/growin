@@ -1,4 +1,4 @@
-import { eq, count, isNull, gte } from "drizzle-orm";
+import { and, eq, count, isNull, gte } from "drizzle-orm";
 import { db } from "@/server/db";
 import { users, leads, products, researchJobs } from "@/server/db/schema";
 
@@ -42,14 +42,20 @@ export async function assertTrialLimit(
   if (!billing.isTrial || billing.expired) return;
 
   if (kind === "lead") {
-    const [row] = await db.select({ c: count() }).from(leads).where(isNull(leads.deletedAt));
+    const [row] = await db
+      .select({ c: count() })
+      .from(leads)
+      .where(and(isNull(leads.deletedAt), eq(leads.ownerId, userId)));
     if ((row?.c ?? 0) >= TRIAL_LIMITS.maxLeads) {
       throw new Error(`Batas trial tercapai (${TRIAL_LIMITS.maxLeads} leads). Upgrade untuk menambah.`);
     }
   }
 
   if (kind === "product") {
-    const [row] = await db.select({ c: count() }).from(products).where(isNull(products.deletedAt));
+    const [row] = await db
+      .select({ c: count() })
+      .from(products)
+      .where(and(isNull(products.deletedAt), eq(products.ownerId, userId)));
     if ((row?.c ?? 0) >= TRIAL_LIMITS.maxProducts) {
       throw new Error(`Batas trial tercapai (${TRIAL_LIMITS.maxProducts} produk). Upgrade untuk menambah.`);
     }
@@ -62,7 +68,7 @@ export async function assertTrialLimit(
     const [row] = await db
       .select({ c: count() })
       .from(researchJobs)
-      .where(gte(researchJobs.createdAt, monthStart));
+      .where(and(gte(researchJobs.createdAt, monthStart), eq(researchJobs.createdById, userId)));
     if ((row?.c ?? 0) >= TRIAL_LIMITS.researchJobsPerMonth) {
       throw new Error(
         `Batas trial tercapai (${TRIAL_LIMITS.researchJobsPerMonth} riset/bulan). Upgrade untuk menambah.`

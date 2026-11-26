@@ -76,6 +76,7 @@ ${JSON.stringify({
       tokensOut: res.usage?.completion_tokens,
       leadId,
       productId: product?.id,
+      userId: userId ?? null,
     });
 
     const result = parsed && scoreSchema.safeParse(parsed).success

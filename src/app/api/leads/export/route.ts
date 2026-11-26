@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
 
   const sp = req.nextUrl.searchParams;
   const rows = await LeadService.exportRows({
+    ownerId: session.user.id,
     search: sp.get("q") ?? undefined,
     status: sp.get("status") ?? undefined,
     industry: sp.get("industry") ?? undefined,

@@ -28,8 +28,8 @@ export async function approveResult(resultId: string, jobId: string) {
 }
 
 export async function rejectResult(resultId: string, jobId: string) {
-  await requireAuth();
-  await ResearchService.rejectResult(resultId);
+  const session = await requireAuth();
+  await ResearchService.rejectResult(resultId, session.user.id);
   revalidatePath(`/research/${jobId}`);
 }
 
@@ -42,8 +42,8 @@ export async function approveAllPending(jobId: string) {
 }
 
 export async function markJobReviewed(jobId: string) {
-  await requireAuth();
-  await ResearchService.markJobReviewed(jobId);
+  const session = await requireAuth();
+  await ResearchService.markJobReviewed(jobId, session.user.id);
   revalidatePath(`/research/${jobId}`);
 }
 

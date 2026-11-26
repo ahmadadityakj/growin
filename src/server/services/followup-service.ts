@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lte } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
   followupSequences, followupSteps, followupSchedules,
@@ -23,7 +23,7 @@ export const sequenceInputSchema = z.object({
 export type SequenceInput = z.infer<typeof sequenceInputSchema>;
 
 export class FollowUpService {
-  static async createSequence(input: SequenceInput) {
+  static async createSequence(input: SequenceInput, userId?: string) {
     const data = sequenceInputSchema.parse(input);
     const [seq] = await db
       .insert(followupSequences)
@@ -32,6 +32,7 @@ export class FollowUpService {
         campaignId: data.campaignId ?? null,
         productId: data.productId ?? null,
         channel: data.channel,
+        ownerId: userId ?? null,
       })
       .returning();
     await db.insert(followupSteps).values(
@@ -64,12 +65,19 @@ export class FollowUpService {
     );
   }
 
-  static async setActive(id: string, isActive: boolean) {
-    await db.update(followupSequences).set({ isActive, updatedAt: new Date() }).where(eq(followupSequences.id, id));
+  static async setActive(id: string, isActive: boolean, ownerId?: string) {
+    await db
+      .update(followupSequences)
+      .set({ isActive, updatedAt: new Date() })
+      .where(and(eq(followupSequences.id, id), ownerId ? eq(followupSequences.ownerId, ownerId) : undefined));
   }
 
-  static async listSequences() {
-    const seqs = await db.select().from(followupSequences).orderBy(desc(followupSequences.createdAt));
+  static async listSequences(ownerId?: string) {
+    const seqs = await db
+      .select()
+      .from(followupSequences)
+      .where(ownerId ? eq(followupSequences.ownerId, ownerId) : undefined)
+      .orderBy(desc(followupSequences.createdAt));
     const steps = await db.select().from(followupSteps).orderBy(asc(followupSteps.stepOrder));
     const schedules = await db
       .select({ sequenceId: followupSchedules.sequenceId, status: followupSchedules.status })
@@ -82,16 +90,18 @@ export class FollowUpService {
     }));
   }
 
-  static async getSequence(id: string) {
-    const seq = await db.query.followupSequences.findFirst({ where: eq(followupSequences.id, id) });
+  static async getSequence(id: string, ownerId?: string) {
+    const seq = await db.query.followupSequences.findFirst({
+      where: and(eq(followupSequences.id, id), ownerId ? eq(followupSequences.ownerId, ownerId) : undefined),
+    });
     if (!seq) return null;
     const steps = await db.select().from(followupSteps).where(eq(followupSteps.sequenceId, id)).orderBy(asc(followupSteps.stepOrder));
     return { ...seq, steps };
   }
 
   /** Daftarkan lead ke sequence; mulai dari step 1. */
-  static async enroll(sequenceId: string, leadIds: string[]) {
-    const seq = await this.getSequence(sequenceId);
+  static async enroll(sequenceId: string, leadIds: string[], ownerId?: string) {
+    const seq = await this.getSequence(sequenceId, ownerId);
     if (!seq) throw new Error("Sequence tidak ditemukan");
     if (!seq.isActive) throw new Error("Sequence tidak aktif");
     if (!seq.steps.length) throw new Error("Sequence belum punya step");
@@ -120,8 +130,15 @@ export class FollowUpService {
     return enrolled;
   }
 
-  static async setScheduleStatus(id: string, status: "paused" | "cancelled" | "active") {
-    const sched = await db.query.followupSchedules.findFirst({ where: eq(followupSchedules.id, id) });
+  static async setScheduleStatus(id: string, status: "paused" | "cancelled" | "active", ownerId?: string) {
+    const sched = await db.query.followupSchedules.findFirst({
+      where: and(
+        eq(followupSchedules.id, id),
+        ownerId
+          ? sql`exists (select 1 from followup_sequences seq where seq.id = ${followupSchedules.sequenceId} and seq.owner_id = ${ownerId})`
+          : undefined
+      ),
+    });
     if (!sched) throw new Error("Schedule tidak ditemukan");
     await db.update(followupSchedules).set({
       status,
@@ -133,10 +150,11 @@ export class FollowUpService {
     }).where(eq(followupSchedules.id, id));
   }
 
-  static async listSchedules(filter?: { sequenceId?: string; status?: string }) {
+  static async listSchedules(filter?: { sequenceId?: string; status?: string; ownerId?: string }) {
     const conds = [];
     if (filter?.sequenceId) conds.push(eq(followupSchedules.sequenceId, filter.sequenceId));
     if (filter?.status) conds.push(eq(followupSchedules.status, filter.status as never));
+    if (filter?.ownerId) conds.push(eq(followupSequences.ownerId, filter.ownerId));
     const rows = await db
       .select({
         schedule: followupSchedules,
@@ -227,7 +245,7 @@ export class FollowUpService {
           subject: rendered.subject,
           body: rendered.body,
         },
-        undefined,
+        seq.ownerId ?? undefined,
         false // status draft, lalu langsung approved+queued (sequence = persetujuan user)
       );
       await OutreachService.approve([msg.id]);
@@ -267,7 +285,7 @@ export class FollowUpService {
   private static async renderStepBody(
     step: { templateId: string | null; instruction: string | null },
     lead: { id: string; businessName: string; contactPerson: string | null },
-    seq: { channel: string; productId: string | null; campaignId: string | null }
+    seq: { channel: string; productId: string | null; campaignId: string | null; ownerId?: string | null }
   ): Promise<{ body: string; subject?: string | null; templateId?: string | null }> {
     if (step.templateId) {
       const tpl = await db.query.outreachTemplates.findFirst({
@@ -296,7 +314,7 @@ export class FollowUpService {
           language: "id",
           instruction: step.instruction,
           variations: 1,
-        });
+        }, seq.ownerId ?? undefined);
         if (gen[0]?.body) return { body: gen[0].body, subject: gen[0].subject };
       } catch {
         // fallback ke instruksi mentah di bawah
