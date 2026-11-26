@@ -26,9 +26,9 @@ export const PLAN_LIMITS: Record<
   }
 > = {
   trial: {
-    maxLeads: 500,
+    maxLeads: 300,
     maxProducts: 1,
-    researchJobsPerMonth: 10,
+    researchJobsPerMonth: 5,
     researchTargetMax: 50,
     platformAICallsPerMonth: 200,
     maxTeamSeats: 1,

@@ -177,7 +177,7 @@ export default async function LandingPage() {
               <Button size="lg" variant="outline" render={<a href="#cara-kerja">Lihat cara kerja</a>} />
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              Trial 14 hari: 500 leads · 10 riset AI · 200 operasi AI. Pesan terkirim atas nama
+              Trial 14 hari: 300 leads · 5 riset AI · 200 operasi AI. Pesan terkirim atas nama
               nomor/domain Anda sendiri (Fonnte, Resend, dsb). Tanpa kartu kredit.
             </p>
           </div>
@@ -349,7 +349,7 @@ export default async function LandingPage() {
         <div className="mt-8 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 text-sm">
           <span className="font-semibold text-emerald-900">Semua akun mulai dari trial 14 hari. </span>
           <span className="text-muted-foreground">
-            Yang Anda dapat selama trial: 500 leads, 1 produk, 10 riset AI (maks 50 prospek per riset),
+            Yang Anda dapat selama trial: 300 leads, 1 produk, 5 riset AI (maks 50 prospek per riset),
             200 operasi AI platform, semua channel outreach, Inbox, follow-up, dan pipeline penuh.
             Pesan dikirim dari nomor WA/domain email Anda sendiri, bukan nomor Growin.
             Setelah 14 hari, data tetap tersimpan; upgrade untuk melanjutkan.
