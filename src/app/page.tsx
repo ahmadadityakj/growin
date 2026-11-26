@@ -177,7 +177,7 @@ export default async function LandingPage() {
               <Button size="lg" variant="outline" render={<a href="#cara-kerja">Lihat cara kerja</a>} />
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              Trial 14 hari: 300 leads · 5 riset AI · 200 operasi AI. Pesan terkirim atas nama
+              Trial 14 hari: 150 leads · 3 riset AI · 150 operasi AI. Pesan terkirim atas nama
               nomor/domain Anda sendiri (Fonnte, Resend, dsb). Tanpa kartu kredit.
             </p>
           </div>
@@ -366,9 +366,9 @@ export default async function LandingPage() {
           </div>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              ["300", "leads di CRM"],
-              ["5", "riset AI (maks 50 prospek/riset)"],
-              ["200", "operasi AI platform"],
+              ["150", "leads di CRM"],
+              ["3", "riset AI (maks 50 prospek/riset)"],
+              ["150", "operasi AI platform"],
               ["Semua", "channel outreach, Inbox, follow-up & pipeline"],
             ].map(([num, label]) => (
               <div key={label} className="rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm">
