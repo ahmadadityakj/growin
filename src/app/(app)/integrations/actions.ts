@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { TeamService } from "@/server/services/team-service";
 import { IntegrationService, type ProviderKey } from "@/server/services/integration-service";
 
 async function requireAuth() {
@@ -17,20 +18,20 @@ export async function saveIntegration(
   credentials: Record<string, string>
 ) {
   const session = await requireAuth();
-  await IntegrationService.upsertCredentials(provider, name, credentials, undefined, session.user.id);
+  await IntegrationService.upsertCredentials(provider, name, credentials, undefined, await TeamService.resolveScope(session.user.id));
   revalidatePath("/integrations");
 }
 
 export async function testIntegration(provider: ProviderKey) {
   const session = await requireAuth();
-  const result = await IntegrationService.testConnection(provider, session.user.id);
-  await IntegrationService.setStatus(provider, result.ok ? "active" : "error", result.detail, session.user.id);
+  const result = await IntegrationService.testConnection(provider, await TeamService.resolveScope(session.user.id));
+  await IntegrationService.setStatus(provider, result.ok ? "active" : "error", result.detail, await TeamService.resolveScope(session.user.id));
   revalidatePath("/integrations");
   return result;
 }
 
 export async function deactivateIntegration(provider: ProviderKey) {
   const session = await requireAuth();
-  await IntegrationService.setStatus(provider, "inactive", undefined, session.user.id);
+  await IntegrationService.setStatus(provider, "inactive", undefined, await TeamService.resolveScope(session.user.id));
   revalidatePath("/integrations");
 }

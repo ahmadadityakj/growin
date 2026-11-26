@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { TeamService } from "@/server/services/team-service";
 import { LeadService } from "@/server/services/lead-service";
 import Papa from "papaparse";
 
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   const sp = req.nextUrl.searchParams;
   const rows = await LeadService.exportRows({
-    ownerId: session.user.id,
+    ownerId: await TeamService.resolveScope(session.user.id),
     search: sp.get("q") ?? undefined,
     status: sp.get("status") ?? undefined,
     industry: sp.get("industry") ?? undefined,

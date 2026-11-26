@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { TeamService } from "@/server/services/team-service";
 import { TaskService } from "@/server/services/task-service";
 import { enqueue, QUEUES } from "@/server/jobs/queue";
 
@@ -14,7 +15,7 @@ async function requireAuth() {
 
 export async function createTask(instruction: string) {
   const session = await requireAuth();
-  const task = await TaskService.create(instruction, session.user.id);
+  const task = await TaskService.create(instruction, await TeamService.resolveScope(session.user.id));
   await enqueue(QUEUES.taskExecute, { taskId: task.id });
   revalidatePath("/tasks");
   return task.id;

@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { getBillingStatus } from "@/lib/billing";
+import { TeamService } from "@/server/services/team-service";
 import { TrialBanner } from "@/components/layout/trial-banner";
 import { TrialExpired } from "@/components/layout/trial-expired";
 
@@ -15,7 +16,8 @@ export default async function AppLayout({
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const billing = await getBillingStatus(session.user.id);
+  const scope = await TeamService.resolveScope(session.user.id);
+  const billing = await getBillingStatus(scope);
   if (billing.expired) return <TrialExpired />;
 
   return (

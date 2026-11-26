@@ -8,9 +8,14 @@ import { t } from "@/lib/i18n";
 
 export const metadata = { title: "Daftar | Growin" };
 
-export default async function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ invite?: string }>;
+}) {
   const session = await auth();
   if (session?.user) redirect("/dashboard");
+  const { invite } = await searchParams;
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -26,7 +31,7 @@ export default async function SignupPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t.auth.signupTitle}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t.auth.signupSubtitle}</p>
           <div className="mt-6">
-            <SignupForm />
+            <SignupForm inviteToken={invite} />
           </div>
           <p className="mt-6 text-center text-sm text-muted-foreground">
             {t.auth.haveAccount}{" "}

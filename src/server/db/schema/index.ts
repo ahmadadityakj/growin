@@ -7,3 +7,4 @@ export * from "./ai";
 export * from "./integrations";
 export * from "./compliance";
 export * from "./jobs";
+export * from "./team";
