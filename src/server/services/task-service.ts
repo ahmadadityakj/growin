@@ -22,8 +22,8 @@ Tipe task:
 - "summarize": ringkasan performa/statistik. params: {"scope":string|null}
 - "other": lainnya. params: {}
 
-Contoh: "Cari 50 sekolah swasta di Lombok untuk Sekolaa" →
-{"type":"research","params":{"targetQuantity":50,"targetIndustry":"sekolah swasta","targetLocation":"Lombok","targetAudience":null}}
+Contoh: "Cari 80 klinik kecantikan di Jabodetabek" →
+{"type":"research","params":{"targetQuantity":80,"targetIndustry":"klinik kecantikan","targetLocation":"Jabodetabek","targetAudience":null}}
 
 Kembalikan HANYA JSON valid.`;
 

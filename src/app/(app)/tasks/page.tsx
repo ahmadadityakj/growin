@@ -38,8 +38,8 @@ export default async function TasksPage() {
         <CardContent>
           <TaskInput />
           <div className="mt-3 text-xs text-muted-foreground">
-            Contoh: &quot;Cari 50 sekolah swasta di Lombok untuk Sekolaa&quot; ·
-            &quot;Riset venue mini soccer di Mataram&quot; ·
+            Contoh: &quot;Cari 80 klinik kecantikan di Jabodetabek&quot; ·
+            &quot;Riset 30 cafe & resto baru di Bandung&quot; ·
             &quot;Tampilkan leads yang belum dihubungi&quot; ·
             &quot;Ringkas performa kampanye bulan ini&quot;
           </div>

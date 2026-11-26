@@ -25,7 +25,7 @@ export function TaskInput() {
       <Textarea
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Ketik instruksi dalam bahasa natural... (mis: Cari 50 sekolah swasta di Lombok)"
+        placeholder="Ketik instruksi dalam bahasa natural... (mis: Cari 80 klinik kecantikan di Jabodetabek)"
         rows={2}
         className="flex-1"
         onKeyDown={(e) => {

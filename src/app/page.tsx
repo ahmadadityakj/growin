@@ -32,7 +32,7 @@ const STEPS = [
   {
     icon: Import,
     title: "Masukkan prospek",
-    desc: "Dari mana saja: impor daftar yang sudah Anda punya, tambah manual, atau biar AI yang carikan. Misalnya '50 sekolah swasta di Lombok', lengkap dengan kontak dan tanpa duplikat.",
+    desc: "Dari mana saja: impor daftar yang sudah Anda punya, tambah manual, atau biar AI yang carikan. Misalnya '80 klinik kecantikan di Jabodetabek', lengkap dengan kontak dan tanpa duplikat.",
   },
   {
     icon: MessageSquareText,

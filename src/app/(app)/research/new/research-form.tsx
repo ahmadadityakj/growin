@@ -53,7 +53,7 @@ export function ResearchForm({
             <Label htmlFor="instruction">Instruksi Riset *</Label>
             <Textarea
               id="instruction" name="instruction" required rows={3}
-              placeholder="mis: Cari 100 sekolah swasta di Lombok, kumpulkan website resmi, email publik, telepon, alamat, dan kontak kepala sekolah jika tersedia."
+              placeholder="mis: Cari 80 klinik kecantikan di Jabodetabek, kumpulkan website resmi, email publik, telepon/WA, alamat, dan nama pemilik atau kontak marketing jika tersedia."
             />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -63,11 +63,11 @@ export function ResearchForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="targetIndustry">Target Industri</Label>
-              <Input id="targetIndustry" name="targetIndustry" placeholder="mis: sekolah swasta" />
+              <Input id="targetIndustry" name="targetIndustry" placeholder="mis: klinik kecantikan" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="targetLocation">Target Lokasi</Label>
-              <Input id="targetLocation" name="targetLocation" placeholder="mis: Lombok" />
+              <Input id="targetLocation" name="targetLocation" placeholder="mis: Jabodetabek" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="targetAudience">Target Audiens</Label>
