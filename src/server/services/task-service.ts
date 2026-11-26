@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { TeamService } from "@/server/services/team-service";
-import { aiTasks, aiTaskLogs, leads, outreachMessages, campaigns, researchJobs } from "@/server/db/schema";
+import { aiTasks, aiTaskLogs, leads, outreachMessages, campaigns, researchJobs, aiGenerations } from "@/server/db/schema";
 import { hasAI, withAI, parseModelJson } from "@/server/providers/openai";
 import { z } from "zod";
 
@@ -89,7 +89,7 @@ export class TaskService {
     let parsed: ParsedTask = { type: "other", params: {} };
     if (await hasAI(userId)) {
       try {
-        const { value: res } = await withAI(userId, (ai) =>
+        const { value: res, source } = await withAI(userId, (ai) =>
           ai.client.chat.completions.create({
             model: ai.modelGeneration,
             temperature: 0,
@@ -99,6 +99,16 @@ export class TaskService {
             ],
           })
         );
+        await db.insert(aiGenerations).values({
+          type: "task_parse",
+          model: res.model ?? "unknown",
+          prompt: instruction.slice(0, 500),
+          output: res.choices[0]?.message?.content ?? "",
+          tokensIn: res.usage?.prompt_tokens,
+          tokensOut: res.usage?.completion_tokens,
+          userId,
+          source,
+        });
         const p = parseModelJson<ParsedTask>(res.choices[0]?.message?.content ?? "");
         if (p) parsed = taskParamsSchema.parse(p);
       } catch {
@@ -206,7 +216,7 @@ export class TaskService {
           let summary = `Total ${stats.totalLeads} leads, ${stats.activeCampaigns} kampanye aktif, ${stats.messagesSent} pesan terkirim.`;
           if (await hasAI(task.userId ?? undefined)) {
             try {
-              const { value: res } = await withAI(task.userId ?? undefined, (ai) =>
+              const { value: res, source } = await withAI(task.userId ?? undefined, (ai) =>
                 ai.client.chat.completions.create({
                   model: ai.modelGeneration,
                   messages: [
@@ -216,6 +226,15 @@ export class TaskService {
                 })
               );
               summary = res.choices[0]?.message?.content ?? summary;
+              await db.insert(aiGenerations).values({
+                type: "summary",
+                model: res.model ?? "unknown",
+                output: summary.slice(0, 2000),
+                tokensIn: res.usage?.prompt_tokens,
+                tokensOut: res.usage?.completion_tokens,
+                userId: task.userId ?? null,
+                source,
+              });
             } catch { /* pakai summary fallback */ }
           }
 

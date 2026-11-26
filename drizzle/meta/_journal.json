@@ -78,6 +78,13 @@
       "when": 1795729032023,
       "tag": "0010_ai-source-tables",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795730206477,
+      "tag": "0011_search-query-enum",
+      "breakpoints": true
     }
   ]
 }

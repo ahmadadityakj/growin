@@ -21,6 +21,8 @@ export async function inviteMember(
     if (scope !== session.user.id) {
       return { ok: false, error: "Hanya pemilik workspace yang bisa mengundang member." };
     }
+    const { assertPlanLimit } = await import("@/lib/billing");
+    await assertPlanLimit(session.user.id, "teamSeat");
     const invite = await TeamService.createInvite(session.user.id, email);
     revalidatePath("/settings");
     return { ok: true, token: invite.token };

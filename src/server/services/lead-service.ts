@@ -171,9 +171,9 @@ export class LeadService {
   }
 
   static async create(input: LeadInput, userId?: string, source: "manual" | "csv_import" | "ai_research" = "manual") {
-    const { assertTrialLimit } = await import("@/lib/billing");
+    const { assertPlanLimit } = await import("@/lib/billing");
     const scopeId = userId ? await TeamService.resolveScope(userId) : undefined;
-    await assertTrialLimit(scopeId, "lead");
+    await assertPlanLimit(scopeId, "lead");
     const { nextFollowUpAt, ...rest } = leadInputSchema.parse(input);
     const [created] = await db
       .insert(leads)

@@ -157,6 +157,12 @@ export async function withAI<T>(
   if (!config) throw new Error("AI belum dikonfigurasi (platform & workspace sama-sama kosong)");
 
   if (config.source === "platform") {
+    const { canUsePlatformAI } = await import("@/lib/billing");
+    if (!(await canUsePlatformAI(userId))) {
+      throw new Error(
+        "Kuota pemakaian platform bulan ini habis. Isi API key AI sendiri di Integrations atau upgrade plan."
+      );
+    }
     return { value: await fn(config), source: "platform" };
   }
 

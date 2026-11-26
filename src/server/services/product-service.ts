@@ -50,9 +50,9 @@ export class ProductService {
   }
 
   static async create(input: ProductInput, userId?: string) {
-    const { assertTrialLimit } = await import("@/lib/billing");
+    const { assertPlanLimit } = await import("@/lib/billing");
     const scopeId = userId ? await TeamService.resolveScope(userId) : undefined;
-    await assertTrialLimit(scopeId, "product");
+    await assertPlanLimit(scopeId, "product");
     const data = productInputSchema.parse(input);
     const [created] = await db.insert(products).values({ ...data, ownerId: scopeId ?? null }).returning();
     return created;

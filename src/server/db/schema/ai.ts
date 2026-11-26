@@ -158,6 +158,7 @@ export const aiGenerationTypeEnum = pgEnum("ai_generation_type", [
   "research_extract",
   "lead_score",
   "summary",
+  "search_query",
 ]);
 
 export const aiGenerations = pgTable(

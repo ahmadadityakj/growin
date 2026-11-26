@@ -78,6 +78,25 @@ export interface SearchResult<T> {
   fallbackReason?: string;
 }
 
+/** Catat 1 operasi search platform ke aiGenerations — terhitung ke budget bulanan plan. */
+function meterPlatformSearch(userId: string | undefined, providerName?: string) {
+  if (!userId) return;
+  void (async () => {
+    try {
+      const { db } = await import("@/server/db");
+      const { aiGenerations } = await import("@/server/db/schema");
+      await db.insert(aiGenerations).values({
+        type: "search_query",
+        model: providerName ?? "search",
+        userId,
+        source: "platform",
+      });
+    } catch {
+      // metering tidak boleh mengganggu alur utama
+    }
+  })();
+}
+
 /** Search dengan fallback: BYOK error (kuota/auth) → pakai provider platform bila kuota plan masih ada. */
 export async function withSearch<T>(
   userId: string | undefined,
@@ -88,6 +107,13 @@ export async function withSearch<T>(
     throw new Error(resolved.reason ?? "Belum ada search provider aktif");
   }
   if (resolved.source !== "workspace") {
+    const { canUsePlatformAI } = await import("@/lib/billing");
+    if (!(await canUsePlatformAI(userId))) {
+      throw new Error(
+        "Kuota pemakaian platform bulan ini habis. Isi API key sendiri di Integrations atau upgrade plan."
+      );
+    }
+    meterPlatformSearch(userId, resolved.provider.name);
     return { value: await fn(resolved.provider), source: "platform" };
   }
 
@@ -117,6 +143,7 @@ export async function withSearch<T>(
     } catch {
       // jangan blokir fallback
     }
+    meterPlatformSearch(userId, fallback.provider.name);
     return { value: await fn(fallback.provider), source: "platform", fallbackReason: msg.slice(0, 160) };
   }
 }
