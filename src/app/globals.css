@@ -127,4 +127,21 @@
   html {
     @apply font-sans;
   }
+  /* Tailwind v4: preflight tidak lagi memberi cursor:pointer ke button. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="tab"],
+  [role="option"],
+  [role="menuitem"],
+  select,
+  summary {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
