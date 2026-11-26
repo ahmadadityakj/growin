@@ -375,10 +375,12 @@ export class OutreachService {
     try {
       const { getMessagingProvider } = await import("../providers/messaging");
       const provider = await getMessagingProvider(msg.channel, msg.createdById ?? undefined);
+      const { inboundReplyTo } = await import("@/lib/inbound-email");
       const result = await provider.send({
         recipient: msg.recipient,
         subject: msg.subject ?? undefined,
         body: msg.body,
+        replyTo: msg.channel === "email" ? inboundReplyTo(msg.leadId) : undefined,
       });
       await this.setStatus(messageId, "sent", {
         sentAt: new Date(),

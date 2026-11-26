@@ -56,10 +56,12 @@ export async function sendReply(input: unknown) {
   await OutreachService.log(msg.id, "created", "Balasan manual dari Inbox");
 
   try {
+    const { inboundReplyTo } = await import("@/lib/inbound-email");
     const result = await provider.send({
       recipient,
       subject: data.subject || undefined,
       body: data.body,
+      replyTo: data.channel === "email" ? inboundReplyTo(lead.id) : undefined,
     });
     await OutreachService.setStatus(msg.id, "sent", {
       sentAt: new Date(),

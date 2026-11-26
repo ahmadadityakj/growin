@@ -167,7 +167,11 @@ export default async function IntegrationsPage() {
         <SlotSection
           slot="email"
           title="Channel Email"
-          description="Untuk outreach & follow-up email — terkirim atas nama domain/akun Anda."
+          description={
+            env.INBOUND_EMAIL_DOMAIN
+              ? "Terkirim atas nama domain/akun Anda — balasan lead otomatis masuk Inbox."
+              : "Untuk outreach & follow-up email — terkirim atas nama domain/akun Anda."
+          }
           options={EMAIL_OPTIONS}
           selected={slotSelected(["resend", "smtp"], false)}
           providers={{ resend: cardData("resend"), smtp: cardData("smtp") }}

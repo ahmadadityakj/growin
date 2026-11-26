@@ -29,12 +29,13 @@ export class SmtpProvider implements MessagingProvider {
     await this.transporter().verify();
   }
 
-  async send(input: { recipient: string; subject?: string; body: string }): Promise<SendResult> {
+  async send(input: { recipient: string; subject?: string; body: string; replyTo?: string }): Promise<SendResult> {
     const info = await this.transporter().sendMail({
       from: this.creds.fromEmail || this.creds.user,
       to: input.recipient,
       subject: input.subject || "(no subject)",
       text: input.body,
+      ...(input.replyTo ? { replyTo: input.replyTo } : {}),
     });
     return { providerMessageId: info.messageId, detail: `Terkirim via SMTP ke ${input.recipient}` };
   }

@@ -5,7 +5,13 @@ export interface SendResult {
 
 export interface MessagingProvider {
   name: string;
-  send(input: { recipient: string; subject?: string; body: string }): Promise<SendResult>;
+  send(input: {
+    recipient: string;
+    subject?: string;
+    body: string;
+    /** Reply-To header — untuk email, arahkan balasan ke alamat inbound Growin. */
+    replyTo?: string;
+  }): Promise<SendResult>;
 }
 
 /** Pilih messaging provider per channel; credential per-workspace dari integrations table. */

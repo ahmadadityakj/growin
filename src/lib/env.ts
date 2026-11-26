@@ -21,6 +21,10 @@ const envSchema = z.object({
   BILLING_BANK_INFO: z.string().optional(),
   /** Nomor WA support untuk request integrasi/bantuan — format internasional tanpa +, mis. 6281234567890 */
   SUPPORT_WA_NUMBER: z.string().optional(),
+  /** Domain inbound untuk Reply-To outreach email, mis. reply.growin.app — MX-nya diarahkan ke inbound handler (Cloudflare Email Worker/Resend). */
+  INBOUND_EMAIL_DOMAIN: z.string().optional(),
+  /** Shared secret untuk autentikasi webhook inbound email (header x-inbound-secret). */
+  INBOUND_EMAIL_SECRET: z.string().optional(),
   FONNTE_TOKEN: z.string().optional(),
   N8N_WEBHOOK_URL: z.string().optional(),
   N8N_API_KEY: z.string().optional(),
