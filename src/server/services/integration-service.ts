@@ -5,9 +5,10 @@ import { encrypt, decrypt } from "@/lib/crypto";
 import { env } from "@/lib/env";
 
 export type ProviderKey =
-  | "resend" | "fonnte"
+  | "resend" | "smtp"
+  | "fonnte" | "wablas" | "twilio" | "whatsapp_business"
   | "openai" | "gemini" | "openrouter" | "deepseek" | "groq"
-  | "brave" | "tavily" | "n8n" | "whatsapp_business";
+  | "brave" | "tavily" | "n8n";
 
 /** Provider yang masuk slot Mesin AI (OpenAI-compatible API). */
 export const AI_SLOT_PROVIDERS: ProviderKey[] = ["openai", "gemini", "openrouter", "deepseek", "groq"];
@@ -19,8 +20,24 @@ export const PROVIDER_FIELDS: Record<ProviderKey, { key: string; label: string; 
     { key: "fromEmail", label: "From Email (mis: Growin <noreply@domain.com>)", secret: false },
     { key: "webhookSecret", label: "Webhook Signing Secret (opsional)", secret: true },
   ],
+  smtp: [
+    { key: "host", label: "SMTP Host (mis: smtp.gmail.com)", secret: false },
+    { key: "port", label: "Port (587 / 465)", secret: false },
+    { key: "user", label: "Username / Email", secret: false },
+    { key: "pass", label: "Password / App Password", secret: true },
+    { key: "fromEmail", label: "From Email (mis: Nama <email@domain.com>)", secret: false },
+  ],
   fonnte: [
     { key: "token", label: "Token", secret: true },
+  ],
+  wablas: [
+    { key: "domain", label: "API Domain (mis: https://pati.wablas.com)", secret: false },
+    { key: "token", label: "Token", secret: true },
+  ],
+  twilio: [
+    { key: "accountSid", label: "Account SID", secret: false },
+    { key: "authToken", label: "Auth Token", secret: true },
+    { key: "fromNumber", label: "Nomor WA pengirim (mis: +14155238886)", secret: false },
   ],
   openai: [
     { key: "apiKey", label: "API Key", secret: true },
@@ -66,8 +83,8 @@ export type SlotKey = "ai" | "search" | "whatsapp" | "email";
 export const SLOT_PROVIDERS: Record<SlotKey, ProviderKey[]> = {
   ai: AI_SLOT_PROVIDERS,
   search: ["brave", "tavily"],
-  whatsapp: ["fonnte", "whatsapp_business"],
-  email: ["resend"],
+  whatsapp: ["fonnte", "whatsapp_business", "wablas", "twilio"],
+  email: ["resend", "smtp"],
 };
 
 export class IntegrationService {
@@ -287,6 +304,38 @@ export class IntegrationService {
           return data.status || res.ok
             ? { ok: true, detail: `Fonnte OK${data.device ? ` · ${data.device}` : ""}` }
             : { ok: false, detail: `Fonnte: ${data.reason ?? res.status}` };
+        }
+        case "smtp": {
+          const creds = await this.getCredentials("smtp", ownerId);
+          if (!creds.host) return { ok: false, detail: "SMTP host kosong" };
+          const { SmtpProvider } = await import("../providers/messaging/smtp");
+          await new SmtpProvider(creds as never).verify();
+          return { ok: true, detail: `SMTP ${creds.host} OK` };
+        }
+        case "wablas": {
+          const creds = await this.getCredentials("wablas", ownerId);
+          if (!creds.token || !creds.domain) return { ok: false, detail: "Domain / token kosong" };
+          const base = creds.domain.replace(/\/+$/, "");
+          const res = await fetch(`${base}/api/device/info?token=${creds.token}`);
+          const data = await res.json().catch(() => ({}));
+          return res.ok
+            ? { ok: true, detail: `Wablas OK${data.data?.name ? ` · ${data.data.name}` : ""}` }
+            : { ok: false, detail: `Wablas: ${data.message ?? res.status}` };
+        }
+        case "twilio": {
+          const creds = await this.getCredentials("twilio", ownerId);
+          if (!creds.accountSid || !creds.authToken) {
+            return { ok: false, detail: "Account SID / auth token kosong" };
+          }
+          const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${creds.accountSid}.json`, {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${creds.accountSid}:${creds.authToken}`).toString("base64")}`,
+            },
+          });
+          const data = await res.json().catch(() => ({}));
+          return res.ok
+            ? { ok: true, detail: `Twilio OK · ${data.friendly_name ?? creds.accountSid}` }
+            : { ok: false, detail: `Twilio: ${data.message ?? res.status}` };
         }
         case "whatsapp_business": {
           const creds = await this.getCredentials("whatsapp_business", ownerId);

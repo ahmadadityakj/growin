@@ -32,6 +32,14 @@ const PROVIDER_NOTES: Partial<Record<ProviderKey, string>> = {
     "Inferensi Llama sangat cepat dengan free tier — cocok untuk generate pesan.",
   brave: "Search API untuk riset pasar — gratis ±2.000 query/bln di paket Brave Anda.",
   tavily: "Search API untuk riset pasar — gratis ±1.000 query/bln di paket Tavily Anda.",
+  wablas:
+    "Gateway WA Indonesia mirip Fonnte — kirim dari nomor pribadi, batasan volume harian yang sama berlaku. Domain API tiap akun berbeda (lihat di dashboard Wablas).",
+  twilio:
+    "Channel WA internasional resmi — sandbox gratis untuk coba, produksi perlu nomor approved + template pesan. Cocok kalau target pasar luar negeri.",
+  resend:
+    "Email API modern — verifikasi domain sendiri untuk deliverability. Free tier 100 email/hari.",
+  smtp:
+    "Jalan dengan hampir semua provider email: Gmail (App Password), SES, Brevo, Mailgun, Zoho. Pakai kredensial SMTP dari provider email Anda.",
 };
 
 const AI_OPTIONS: SlotOption[] = [
@@ -52,10 +60,16 @@ const SEARCH_OPTIONS: SlotOption[] = [
 const WA_OPTIONS: SlotOption[] = [
   { value: "fonnte", label: "Fonnte", hint: "Mudah — kirim dari nomor WA pribadi, volume kecil" },
   { value: "whatsapp_business", label: "WhatsApp Business API", hint: "Resmi Meta — untuk volume besar" },
+  { value: "wablas", label: "Wablas", hint: "Gateway WA lokal alternatif Fonnte" },
+  { value: "twilio", label: "Twilio", hint: "WA internasional — sandbox gratis untuk coba" },
+];
+
+const EMAIL_OPTIONS: SlotOption[] = [
+  { value: "resend", label: "Resend", hint: "Email API modern — domain sendiri, free 100/hari" },
+  { value: "smtp", label: "SMTP umum", hint: "Gmail, SES, Brevo, Mailgun, Zoho — pakai kredensial SMTP provider Anda" },
 ];
 
 const STANDALONE: { key: ProviderKey; title: string; desc: string }[] = [
-  { key: "resend", title: "Resend (Email)", desc: "Channel email untuk outreach & follow-up" },
   { key: "n8n", title: "n8n", desc: "Workflow automation (opsional)" },
 ];
 
@@ -144,7 +158,21 @@ export default async function IntegrationsPage() {
           description="Pilih satu — pesan terkirim atas nama nomor Anda, bukan Growin."
           options={WA_OPTIONS}
           selected={slotSelected(["fonnte", "whatsapp_business"], false)}
-          providers={{ fonnte: cardData("fonnte"), whatsapp_business: cardData("whatsapp_business") }}
+          providers={{
+            fonnte: cardData("fonnte"),
+            whatsapp_business: cardData("whatsapp_business"),
+            wablas: cardData("wablas"),
+            twilio: cardData("twilio"),
+          }}
+          isOwner={isOwner}
+        />
+        <SlotSection
+          slot="email"
+          title="Channel Email"
+          description="Untuk outreach & follow-up email — terkirim atas nama domain/akun Anda."
+          options={EMAIL_OPTIONS}
+          selected={slotSelected(["resend", "smtp"], false)}
+          providers={{ resend: cardData("resend"), smtp: cardData("smtp") }}
           isOwner={isOwner}
         />
         {STANDALONE.map((p) => {

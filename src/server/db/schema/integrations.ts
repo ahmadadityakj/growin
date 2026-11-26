@@ -5,7 +5,10 @@ import { users } from "./auth";
 
 export const integrationProviderEnum = pgEnum("integration_provider", [
   "resend",
+  "smtp",
   "fonnte",
+  "wablas",
+  "twilio",
   "openai",
   "gemini",
   "openrouter",
