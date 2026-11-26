@@ -23,12 +23,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  const isIncoming = Boolean(body.sender && body.message);
   const [wh] = await db
     .insert(webhookEvents)
     .values({
       provider: "fonnte",
-      eventType: body.sender ? "incoming_message" : "status_update",
-      payload: body,
+      eventType: isIncoming ? "incoming_message" : "status_update",
+      // hanya metadata — isi pesan tidak disimpan di log (privasi);
+      // balasan yang match lead sudah persist di messageReplies
+      payload: isIncoming
+        ? { sender: body.sender }
+        : { id: body.id ?? body.message_id, status: body.status },
       signatureValid: null,
       status: "received",
     })

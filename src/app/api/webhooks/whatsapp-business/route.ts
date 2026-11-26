@@ -56,12 +56,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  // hanya metadata — isi pesan tidak disimpan di log (privasi);
+  // balasan yang match lead sudah persist di messageReplies
+  const payloadSummary = {
+    entries: (body.entry ?? []).map((e) =>
+      (e.changes ?? []).map((c) => ({
+        phoneNumberId: c.value?.metadata?.phone_number_id,
+        statuses: (c.value?.statuses ?? []).map((s) => ({ id: s.id, status: s.status })),
+        messages: (c.value?.messages ?? []).map((m) => ({ from: m.from, id: m.id, type: m.type })),
+      }))
+    ),
+  };
+
   const [wh] = await db
     .insert(webhookEvents)
     .values({
       provider: "whatsapp_business",
       eventType: "incoming",
-      payload: body,
+      payload: payloadSummary,
       signatureValid: null,
       status: "received",
     })
