@@ -1,8 +1,8 @@
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, count, isNull } from "drizzle-orm";
 import { db } from "@/server/db";
-import { billingRequests, users } from "@/server/db/schema";
+import { billingRequests, users, leads } from "@/server/db/schema";
 import { requireUserId, requireActorId } from "@/lib/session";
-import { getBillingStatus } from "@/lib/billing";
+import { getBillingStatus, platformAIUsage, planLimitsOf } from "@/lib/billing";
 import { env } from "@/lib/env";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -43,6 +43,11 @@ export default async function BillingPage() {
   const actor = await requireActorId();
   const billing = await getBillingStatus(scopeId);
   const me = await db.query.users.findFirst({ where: eq(users.id, actor) });
+  const [{ limits }, aiUsage, [leadCount]] = await Promise.all([
+    planLimitsOf(scopeId),
+    platformAIUsage(scopeId),
+    db.select({ c: count() }).from(leads).where(and(isNull(leads.deletedAt), eq(leads.ownerId, scopeId))),
+  ]);
 
   const myRequests = await db.query.billingRequests.findMany({
     where: eq(billingRequests.userId, scopeId),
@@ -74,11 +79,27 @@ export default async function BillingPage() {
             <div className="text-sm text-muted-foreground">Paket aktif</div>
             <div className="text-xl font-bold capitalize">{billing.plan}</div>
           </div>
-          {billing.isTrial && billing.daysLeft !== null && (
-            <div className="text-sm text-muted-foreground">
-              Sisa trial: <span className="font-semibold text-amber-700">{billing.daysLeft} hari</span>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            {billing.isTrial && billing.daysLeft !== null && (
+              <div>
+                Sisa trial: <span className="font-semibold text-amber-700">{billing.daysLeft} hari</span>
+              </div>
+            )}
+            <div>
+              Leads:{" "}
+              <span className="font-semibold text-foreground">
+                {leadCount?.c.toLocaleString("id-ID")}
+                {limits.maxLeads !== null && ` / ${limits.maxLeads.toLocaleString("id-ID")}`}
+              </span>
             </div>
-          )}
+            <div>
+              Operasi AI platform bulan ini:{" "}
+              <span className="font-semibold text-foreground">
+                {aiUsage.used.toLocaleString("id-ID")}
+                {aiUsage.limit !== null ? ` / ${aiUsage.limit.toLocaleString("id-ID")}` : " (tanpa batas)"}
+              </span>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -134,6 +155,12 @@ export default async function BillingPage() {
           </Card>
         ))}
       </div>
+
+      <p className="mt-3 text-xs text-muted-foreground">
+        Operasi AI dihitung dari pemakaian AI bawaan Growin. Isi API key sendiri di
+        Integrations (OpenAI, Gemini, OpenRouter, DeepSeek, Groq) dan pemakaian AI Anda
+        tanpa batas — kuota tidak berlaku.
+      </p>
 
       <Card className="mt-5">
         <CardHeader className="pb-2">

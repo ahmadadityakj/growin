@@ -356,6 +356,11 @@ export default async function LandingPage() {
           </span>
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
+          Operasi AI dihitung dari pemakaian AI bawaan Growin. Isi API key sendiri
+          (OpenAI, Gemini, OpenRouter, DeepSeek, Groq) di Integrations dan pemakaian AI Anda
+          tanpa batas — kuota tidak berlaku.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
           Pembayaran via transfer bank, konfirmasi diproses maks 1x24 jam kerja. Harga peluncuran dan dapat berubah.
         </p>
       </section>
