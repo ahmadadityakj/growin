@@ -57,7 +57,7 @@ const FEATURES = [
   { icon: CalendarCheck2, title: "Agenda harian", desc: "Dashboard menampilkan yang harus dikerjakan hari ini: follow-up jatuh tempo, balasan baru masuk, dan leads qualified yang belum dihubungi." },
   { icon: BarChart3, title: "Laporan & nilai deal", desc: "Pipeline kanban dengan estimasi nilai deal, plus laporan revenue per sumber leads, per kampanye, dan per anggota tim. Anda tahu aktivitas mana yang benar-benar menghasilkan." },
   { icon: Users, title: "Kerja tim", desc: "Undang anggota tim, bagi leads per penanggung jawab, dan pantau performa masing-masing: pesan terkirim, balasan, sampai closing." },
-  { icon: KeyRound, title: "Provider pilihan Anda", desc: "Pakai API key sendiri (OpenAI, Gemini, OpenRouter, DeepSeek, Groq) dengan fallback otomatis ke platform, atau pakai bawaan Growin. Channel kirim juga pilihan Anda: Fonnte, WA Business, Wablas, Twilio, Resend, atau SMTP." },
+  { icon: KeyRound, title: "Bawa key sendiri, kendalikan biaya", desc: "Fleksibel penuh: pakai API key Anda sendiri (OpenAI, Gemini, OpenRouter, DeepSeek, Groq) — biaya ikut akun Anda, kuota kami tidak berlaku. Channel kirim juga pilihan Anda: Fonnte, WA Business, Wablas, Twilio, Resend, atau SMTP. Butuh provider lain? Tinggal request." },
 ];
 
 const TIERS = [

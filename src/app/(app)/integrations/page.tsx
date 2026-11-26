@@ -204,6 +204,29 @@ export default async function IntegrationsPage() {
           );
         })}
       </div>
+
+      <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm leading-relaxed text-emerald-900">
+        <strong>Butuh provider yang belum ada?</strong> Daftar ini terus bertambah — kalau Anda
+        pakai layanan lain (gateway WA, email API, model AI), minta ke kami dan akan kami
+        tambahkan kalau memungkinkan.
+        {env.SUPPORT_WA_NUMBER ? (
+          <>
+            {" "}
+            <a
+              className="font-semibold underline underline-offset-2"
+              href={`https://wa.me/${env.SUPPORT_WA_NUMBER}?text=${encodeURIComponent(
+                "Halo, saya mau request integrasi provider di Growin: "
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Request via WhatsApp
+            </a>
+          </>
+        ) : (
+          <> Hubungi admin untuk request.</>
+        )}
+      </div>
     </div>
   );
 }

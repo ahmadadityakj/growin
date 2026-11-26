@@ -19,6 +19,8 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().optional(),
   BILLING_BANK_INFO: z.string().optional(),
+  /** Nomor WA support untuk request integrasi/bantuan — format internasional tanpa +, mis. 6281234567890 */
+  SUPPORT_WA_NUMBER: z.string().optional(),
   FONNTE_TOKEN: z.string().optional(),
   N8N_WEBHOOK_URL: z.string().optional(),
   N8N_API_KEY: z.string().optional(),
