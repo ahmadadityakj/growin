@@ -50,7 +50,7 @@ export const id = {
     login: "Masuk",
     loginError: "Email atau password salah",
     signupTitle: "Buat akun Growin",
-    signupSubtitle: "Daftar gratis dan mulai bangun pipeline Anda",
+    signupSubtitle: "Gratis 14 hari, tanpa kartu kredit",
     name: "Nama",
     confirmPassword: "Ulangi password",
     passwordHint: "Minimal 8 karakter",

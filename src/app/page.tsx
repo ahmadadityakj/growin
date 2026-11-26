@@ -165,7 +165,9 @@ export default async function LandingPage() {
               <Button size="lg" className="shadow-md shadow-emerald-600/20" render={<Link href={ctaHref}>{ctaLabel} <ArrowRight className="ml-1" /></Link>} />
               <Button size="lg" variant="outline" render={<a href="#cara-kerja">Lihat cara kerja</a>} />
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">Riset pertama gratis. Tidak perlu kartu kredit.</p>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Trial 14 hari: 500 leads · 1 produk · 10 riset AI/bulan (maks 50 per riset). Tanpa kartu kredit.
+            </p>
           </div>
 
           <div className="relative">
@@ -332,7 +334,14 @@ export default async function LandingPage() {
             </div>
           ))}
         </div>
-        <p className="mt-6 text-xs text-muted-foreground">
+        <div className="mt-8 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 text-sm">
+          <span className="font-semibold text-emerald-900">Semua akun mulai dari trial 14 hari. </span>
+          <span className="text-muted-foreground">
+            Yang Anda dapat selama trial: 500 leads, 1 produk, 10 riset AI per bulan (maks 50 prospek per riset),
+            semua channel outreach, dan pipeline penuh. Setelah 14 hari, data tetap tersimpan; upgrade untuk melanjutkan.
+          </span>
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground">
           Kuota riset habis? Top-up Rp50rb per 500 riset. Harga peluncuran dan dapat berubah.
         </p>
       </section>

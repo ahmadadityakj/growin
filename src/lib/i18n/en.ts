@@ -52,7 +52,7 @@ export const en: Dictionary = {
     login: "Sign in",
     loginError: "Invalid email or password",
     signupTitle: "Create your Growin account",
-    signupSubtitle: "Sign up free and start building your pipeline",
+    signupSubtitle: "Free for 14 days, no credit card",
     name: "Name",
     confirmPassword: "Confirm password",
     passwordHint: "Minimum 8 characters",

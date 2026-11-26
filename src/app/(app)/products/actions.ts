@@ -15,8 +15,8 @@ async function requireAuth() {
 }
 
 export async function createProduct(input: ProductInput) {
-  await requireAuth();
-  const product = await ProductService.create(input);
+  const session = await requireAuth();
+  const product = await ProductService.create(input, session.user.id);
   revalidatePath("/products");
   redirect("/products");
 }

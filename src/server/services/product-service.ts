@@ -47,7 +47,9 @@ export class ProductService {
     });
   }
 
-  static async create(input: ProductInput) {
+  static async create(input: ProductInput, userId?: string) {
+    const { assertTrialLimit } = await import("@/lib/billing");
+    await assertTrialLimit(userId, "product");
     const data = productInputSchema.parse(input);
     const [created] = await db.insert(products).values(data).returning();
     return created;

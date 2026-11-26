@@ -140,7 +140,15 @@ export class ResearchService {
   }
 
   static async createJob(input: ResearchJobInput, userId?: string, taskId?: string) {
+    const { assertTrialLimit, getBillingStatus, TRIAL_LIMITS } = await import("@/lib/billing");
+    await assertTrialLimit(userId, "researchJob");
     const data = researchJobInputSchema.parse(input);
+    if (userId) {
+      const billing = await getBillingStatus(userId);
+      if (billing.isTrial && !billing.expired && data.targetQuantity > TRIAL_LIMITS.researchTargetMax) {
+        data.targetQuantity = TRIAL_LIMITS.researchTargetMax;
+      }
+    }
     const [job] = await db
       .insert(researchJobs)
       .values({ ...data, createdById: userId, taskId })

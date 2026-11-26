@@ -30,11 +30,14 @@ export async function signup(input: {
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
+  const trialEndsAt = new Date(Date.now() + 14 * 86_400_000);
   await db.insert(users).values({
     name: parsed.data.name,
     email,
     passwordHash,
     role: "member",
+    plan: "trial",
+    trialEndsAt,
   });
 
   return { ok: true };

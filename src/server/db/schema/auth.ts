@@ -10,6 +10,8 @@ export const users = pgTable("users", {
   image: text("image"),
   passwordHash: text("password_hash"),
   role: userRoleEnum("role").notNull().default("admin"),
+  plan: text("plan").notNull().default("trial"),
+  trialEndsAt: timestamp("trial_ends_at", { mode: "date" }),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
 });

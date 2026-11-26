@@ -162,6 +162,8 @@ export class LeadService {
   }
 
   static async create(input: LeadInput, userId?: string, source: "manual" | "csv_import" | "ai_research" = "manual") {
+    const { assertTrialLimit } = await import("@/lib/billing");
+    await assertTrialLimit(userId, "lead");
     const { nextFollowUpAt, ...rest } = leadInputSchema.parse(input);
     const [created] = await db
       .insert(leads)
