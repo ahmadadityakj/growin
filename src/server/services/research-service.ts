@@ -4,8 +4,8 @@ import { TeamService } from "@/server/services/team-service";
 import {
   researchJobs, researchResults, leads, leadSources, leadActivities, aiGenerations,
 } from "@/server/db/schema";
-import { resolveSearchProvider } from "@/server/providers/search";
-import { getAIConfig, parseModelJson } from "@/server/providers/openai";
+import { resolveSearchProvider, withSearch } from "@/server/providers/search";
+import { hasAI, withAI, parseModelJson } from "@/server/providers/openai";
 import { z } from "zod";
 
 export const researchJobInputSchema = z.object({
@@ -187,7 +187,7 @@ export class ResearchService {
       const urlMap = new Map<string, { title: string; snippet: string }>();
       const extracted: { url: string; data: Extracted | null }[] = [];
       const processedUrls = new Set<string>();
-      const useAI = await getAIConfig(job.createdById ?? undefined);
+      const useAI = await hasAI(job.createdById ?? undefined);
 
       // multi-round: ronde query 4-per-4, berhenti kalau target tercapai
       // atau query habis. Maks 3 ronde untuk jaga credits search API.
@@ -201,7 +201,9 @@ export class ResearchService {
 
         for (const q of roundQueries) {
           try {
-            const results = await provider.search(q, { count: 15, country: "id" });
+            const { value: results } = await withSearch(job.createdById ?? undefined, (sp) =>
+              sp.search(q, { count: 15, country: "id" })
+            );
             for (const r of results) {
               if (!urlMap.has(r.url) && !SKIP_DOMAINS.some((d) => r.url.includes(d))) {
                 urlMap.set(r.url, { title: r.title, snippet: r.snippet });
@@ -331,13 +333,13 @@ export class ResearchService {
     pageText: string,
     job: { instruction: string; targetIndustry?: string | null; targetLocation?: string | null; createdById?: string | null }
   ): Promise<Extracted | null> {
-    const ai = await getAIConfig(job.createdById ?? undefined);
-    if (!ai) return null;
+    if (!(await hasAI(job.createdById ?? undefined))) return null;
     const target = [job.targetIndustry, job.targetLocation].filter(Boolean).join(" di ") || job.instruction;
 
-    const res = await ai.client.chat.completions.create({
-      model: ai.modelExtraction,
-      temperature: 0,
+    const { value: res, source } = await withAI(job.createdById ?? undefined, (ai) =>
+      ai.client.chat.completions.create({
+        model: ai.modelExtraction,
+        temperature: 0,
       messages: [
         {
           role: "system",
@@ -356,16 +358,18 @@ Konten halaman (mungkin terpotong):
 """
 ${pageText.slice(0, 6000)}
 """`,
-        },
-      ],
-    });
+          },
+        ],
+      })
+    );
 
     const text = res.choices[0]?.message?.content ?? "";
     const parsed = parseModelJson<Extracted>(text);
 
     await db.insert(aiGenerations).values({
       type: "research_extract",
-      model: ai.modelExtraction,
+      model: res.model ?? "unknown",
+      source,
       prompt: `extract ${url} untuk ${target}`,
       output: text.slice(0, 4000),
       tokensIn: res.usage?.prompt_tokens,

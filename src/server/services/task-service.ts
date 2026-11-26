@@ -2,7 +2,7 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { TeamService } from "@/server/services/team-service";
 import { aiTasks, aiTaskLogs, leads, outreachMessages, campaigns, researchJobs } from "@/server/db/schema";
-import { getAIConfig, parseModelJson } from "@/server/providers/openai";
+import { hasAI, withAI, parseModelJson } from "@/server/providers/openai";
 import { z } from "zod";
 
 const taskParamsSchema = z.object({
@@ -87,17 +87,18 @@ export class TaskService {
 
   static async create(instruction: string, userId?: string) {
     let parsed: ParsedTask = { type: "other", params: {} };
-    const ai = await getAIConfig(userId);
-    if (ai) {
+    if (await hasAI(userId)) {
       try {
-        const res = await ai.client.chat.completions.create({
-          model: ai.modelGeneration,
-          temperature: 0,
-          messages: [
-            { role: "system", content: PARSE_PROMPT },
-            { role: "user", content: instruction },
-          ],
-        });
+        const { value: res } = await withAI(userId, (ai) =>
+          ai.client.chat.completions.create({
+            model: ai.modelGeneration,
+            temperature: 0,
+            messages: [
+              { role: "system", content: PARSE_PROMPT },
+              { role: "user", content: instruction },
+            ],
+          })
+        );
         const p = parseModelJson<ParsedTask>(res.choices[0]?.message?.content ?? "");
         if (p) parsed = taskParamsSchema.parse(p);
       } catch {
@@ -203,16 +204,17 @@ export class TaskService {
           };
 
           let summary = `Total ${stats.totalLeads} leads, ${stats.activeCampaigns} kampanye aktif, ${stats.messagesSent} pesan terkirim.`;
-          const ai = await getAIConfig(task.userId ?? undefined);
-          if (ai) {
+          if (await hasAI(task.userId ?? undefined)) {
             try {
-              const res = await ai.client.chat.completions.create({
-                model: ai.modelGeneration,
-                messages: [
-                  { role: "system", content: "Ringkas statistik marketing berikut dalam Bahasa Indonesia, maks 5 kalimat, sertakan insight singkat." },
-                  { role: "user", content: JSON.stringify(stats) },
-                ],
-              });
+              const { value: res } = await withAI(task.userId ?? undefined, (ai) =>
+                ai.client.chat.completions.create({
+                  model: ai.modelGeneration,
+                  messages: [
+                    { role: "system", content: "Ringkas statistik marketing berikut dalam Bahasa Indonesia, maks 5 kalimat, sertakan insight singkat." },
+                    { role: "user", content: JSON.stringify(stats) },
+                  ],
+                })
+              );
               summary = res.choices[0]?.message?.content ?? summary;
             } catch { /* pakai summary fallback */ }
           }

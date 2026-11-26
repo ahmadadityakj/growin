@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, ne, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
 import { integrations, integrationLogs } from "@/server/db/schema";
 import { encrypt, decrypt } from "@/lib/crypto";
@@ -33,6 +33,16 @@ export const PROVIDER_FIELDS: Record<ProviderKey, { key: string; label: string; 
     { key: "phoneNumberId", label: "Phone Number ID", secret: false },
     { key: "verifyToken", label: "Webhook Verify Token", secret: true },
   ],
+};
+
+/** Slot kemampuan: user memilih satu provider aktif per slot. */
+export type SlotKey = "ai" | "search" | "whatsapp" | "email";
+
+export const SLOT_PROVIDERS: Record<SlotKey, ProviderKey[]> = {
+  ai: ["openai"],
+  search: ["brave", "tavily"],
+  whatsapp: ["fonnte", "whatsapp_business"],
+  email: ["resend"],
 };
 
 export class IntegrationService {
@@ -85,6 +95,19 @@ export class IntegrationService {
     return row;
   }
 
+  /** Credentials dari row yang dipilih aktif (status != "inactive"). Dipakai resolver runtime. */
+  static async getActiveCredentials(provider: ProviderKey, ownerId?: string): Promise<Record<string, string>> {
+    const row = await db.query.integrations.findFirst({
+      where: and(
+        eq(integrations.provider, provider),
+        ne(integrations.status, "inactive"),
+        ownerId ? eq(integrations.ownerId, ownerId) : undefined
+      ),
+      orderBy: desc(integrations.updatedAt),
+    });
+    return this.decryptRow(provider, row);
+  }
+
   static async getCredentials(provider: ProviderKey, ownerId?: string): Promise<Record<string, string>> {
     const row = await db.query.integrations.findFirst({
       where: and(
@@ -92,6 +115,13 @@ export class IntegrationService {
         ownerId ? eq(integrations.ownerId, ownerId) : undefined
       ),
     });
+    return this.decryptRow(provider, row);
+  }
+
+  private static decryptRow(
+    provider: ProviderKey,
+    row: { credentials: Record<string, string> | null } | undefined
+  ): Record<string, string> {
     if (!row?.credentials) return {};
     const out: Record<string, string> = {};
     for (const [k, v] of Object.entries(row.credentials)) {
@@ -108,6 +138,83 @@ export class IntegrationService {
       }
     }
     return out;
+  }
+
+  /** Catat error runtime provider (kuota/auth/rate limit) ke config jsonb — tampil di UI. */
+  static async recordRuntimeError(
+    provider: ProviderKey,
+    message: string,
+    ownerId?: string,
+    opts?: { fellBack?: boolean }
+  ) {
+    const row = await db.query.integrations.findFirst({
+      where: and(
+        eq(integrations.provider, provider),
+        ownerId ? eq(integrations.ownerId, ownerId) : isNull(integrations.ownerId)
+      ),
+    });
+    if (!row) return;
+    const now = new Date().toISOString();
+    const config: Record<string, unknown> = {
+      ...(row.config ?? {}),
+      lastError: message.slice(0, 300),
+      lastErrorAt: now,
+      ...(opts?.fellBack ? { lastFallbackAt: now } : {}),
+    };
+    await db
+      .update(integrations)
+      .set({ config, updatedAt: new Date() })
+      .where(eq(integrations.id, row.id));
+  }
+
+  /** Provider + credentials yang dipilih user dalam satu slot (row non-inactive terakhir diupdate). */
+  static async getSlotCredentials(
+    slot: SlotKey,
+    ownerId?: string
+  ): Promise<{ provider: ProviderKey; creds: Record<string, string> } | null> {
+    const row = await db.query.integrations.findFirst({
+      where: and(
+        inArray(integrations.provider, SLOT_PROVIDERS[slot]),
+        ne(integrations.status, "inactive"),
+        ownerId ? eq(integrations.ownerId, ownerId) : undefined
+      ),
+      orderBy: desc(integrations.updatedAt),
+    });
+    if (!row) return null;
+    return { provider: row.provider, creds: this.decryptRow(row.provider, row) };
+  }
+
+  /**
+   * Pilih provider aktif untuk satu slot.
+   * "platform" (slot ai/search) → nonaktifkan semua row di slot = pakai bawaan.
+   * Provider tertentu → aktifkan row itu (dibuat stub bila belum ada) & nonaktifkan sibling.
+   */
+  static async setSlotProvider(slot: SlotKey, provider: ProviderKey | "platform" | null, ownerId: string) {
+    const members = SLOT_PROVIDERS[slot];
+    const rows = await db
+      .select()
+      .from(integrations)
+      .where(and(inArray(integrations.provider, members), eq(integrations.ownerId, ownerId)));
+
+    const byProvider = new Map(rows.map((r) => [r.provider, r]));
+    const now = new Date();
+
+    for (const key of members) {
+      const chosen = provider !== "platform" && provider === key;
+      const row = byProvider.get(key);
+      if (chosen) {
+        if (row) {
+          await db.update(integrations).set({ status: "active", updatedAt: now }).where(eq(integrations.id, row.id));
+        } else {
+          // stub: pilihan tersimpan walau credential belum diisi
+          await db.insert(integrations).values({
+            provider: key, name: key, credentials: {}, config: {}, status: "active", ownerId,
+          });
+        }
+      } else if (row && row.status !== "inactive") {
+        await db.update(integrations).set({ status: "inactive", updatedAt: now }).where(eq(integrations.id, row.id));
+      }
+    }
   }
 
   static async setStatus(provider: ProviderKey, status: "active" | "inactive" | "error", detail?: string, ownerId?: string) {

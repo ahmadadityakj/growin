@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { requireOwner } from "@/lib/session";
 import { TeamService } from "@/server/services/team-service";
-import { IntegrationService, type ProviderKey } from "@/server/services/integration-service";
+import { IntegrationService, type ProviderKey, type SlotKey } from "@/server/services/integration-service";
 
 async function requireAuth() {
   const session = await auth();
@@ -31,6 +31,13 @@ export async function testIntegration(provider: ProviderKey) {
   await IntegrationService.setStatus(provider, result.ok ? "active" : "error", result.detail, await TeamService.resolveScope(session.user.id));
   revalidatePath("/integrations");
   return result;
+}
+
+/** Pilih provider aktif untuk slot (ai/search/whatsapp). "platform" = pakai bawaan Growin. */
+export async function setSlotProviderAction(slot: SlotKey, provider: ProviderKey | "platform") {
+  const session = await requireAuth();
+  await IntegrationService.setSlotProvider(slot, provider, await TeamService.resolveScope(session.user.id));
+  revalidatePath("/integrations");
 }
 
 export async function deactivateIntegration(provider: ProviderKey) {

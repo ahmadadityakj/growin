@@ -1,7 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { leads, leadScores, products, productKnowledge, aiGenerations } from "@/server/db/schema";
-import { getAIConfig, parseModelJson } from "@/server/providers/openai";
+import { hasAI, withAI, parseModelJson } from "@/server/providers/openai";
 import { z } from "zod";
 
 const scoreSchema = z.object({
@@ -18,8 +18,7 @@ export class LeadScoringService {
     const lead = await db.query.leads.findFirst({ where: eq(leads.id, leadId) });
     if (!lead) throw new Error("Lead tidak ditemukan");
 
-    const ai = await getAIConfig(userId);
-    if (!ai) {
+    if (!(await hasAI(userId))) {
       // fallback heuristik tanpa AI
       const result = this.heuristicScore(lead);
       await this.save(leadId, productId ?? null, result, "heuristic");
@@ -39,9 +38,10 @@ export class LeadScoringService {
       knowledge = k.map((x) => `${x.title}: ${x.content}`).join("\n").slice(0, 2000);
     }
 
-    const res = await ai.client.chat.completions.create({
-      model: ai.modelGeneration,
-      temperature: 0.2,
+    const { value: res, source } = await withAI(userId, (ai) =>
+      ai.client.chat.completions.create({
+        model: ai.modelGeneration,
+        temperature: 0.2,
       messages: [
         {
           role: "system",
@@ -60,16 +60,18 @@ ${JSON.stringify({
   email: lead.email, phone: lead.phone, whatsapp: lead.whatsappNumber,
   website: lead.website, city: lead.city, province: lead.province,
 })}`,
-        },
-      ],
-    });
+          },
+        ],
+      })
+    );
 
     const text = res.choices[0]?.message?.content ?? "";
     const parsed = parseModelJson<ScoreResult>(text);
 
     await db.insert(aiGenerations).values({
       type: "lead_score",
-      model: ai.modelGeneration,
+      model: res.model ?? "unknown",
+      source,
       prompt: `score lead ${lead.businessName} untuk ${product?.name ?? "-"}`,
       output: text.slice(0, 4000),
       tokensIn: res.usage?.prompt_tokens,

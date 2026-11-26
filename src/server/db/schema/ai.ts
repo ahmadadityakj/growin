@@ -35,6 +35,8 @@ export const aiTasks = pgTable(
     result: jsonb("result").$type<Record<string, unknown>>(),
     error: text("error"),
     userId: uuid("user_id").references(() => users.id),
+    /** "platform" = key bawaan Growin, "workspace" = BYOK user. */
+    source: text("source").notNull().default("platform"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
     completedAt: timestamp("completed_at", { mode: "date" }),
   },
@@ -75,6 +77,8 @@ export const researchJobs = pgTable(
     taskId: uuid("task_id").references(() => aiTasks.id),
     campaignId: uuid("campaign_id").references(() => campaigns.id),
     userId: uuid("user_id").references(() => users.id),
+    /** "platform" = key bawaan Growin, "workspace" = BYOK user. */
+    source: text("source").notNull().default("platform"),
     productId: uuid("product_id").references(() => products.id),
     instruction: text("instruction").notNull(),
     targetQuantity: integer("target_quantity").default(50),
@@ -170,6 +174,8 @@ export const aiGenerations = pgTable(
     productId: uuid("product_id").references(() => products.id),
     campaignId: uuid("campaign_id").references(() => campaigns.id),
     userId: uuid("user_id").references(() => users.id),
+    /** "platform" = key bawaan Growin, "workspace" = BYOK user. */
+    source: text("source").notNull().default("platform"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [

@@ -1,6 +1,6 @@
 import { and, eq, count, inArray, isNull, gte } from "drizzle-orm";
 import { db } from "@/server/db";
-import { users, leads, products, researchJobs } from "@/server/db/schema";
+import { users, leads, products, researchJobs, aiGenerations } from "@/server/db/schema";
 import { TeamService } from "@/server/services/team-service";
 
 export const TRIAL_DAYS = 14;
@@ -11,6 +11,8 @@ export const TRIAL_LIMITS = {
   maxProducts: 1,
   researchJobsPerMonth: 10,
   researchTargetMax: 50,
+  /** Batas operasi AI platform (bukan BYOK) per bulan untuk trial — mencakup riset, scoring, generate pesan. */
+  platformAICallsPerMonth: 200,
 } as const;
 
 export type BillingStatus = {
@@ -81,4 +83,31 @@ export async function assertTrialLimit(
       );
     }
   }
+}
+
+/** Sisa budget pemakaian AI platform bulan ini (fallback BYOK → platform dihitung dari sini). */
+export async function platformAIUsage(userId: string): Promise<{ used: number; limit: number | null }> {
+  const billing = await getBillingStatus(userId);
+  if (!billing.isTrial) return { used: 0, limit: null }; // paid: unlimited untuk sekarang
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const [row] = await db
+    .select({ c: count() })
+    .from(aiGenerations)
+    .where(
+      and(
+        gte(aiGenerations.createdAt, monthStart),
+        inArray(aiGenerations.userId, await TeamService.teamIdsOf(userId)),
+        eq(aiGenerations.source, "platform")
+      )
+    );
+  return { used: row?.c ?? 0, limit: TRIAL_LIMITS.platformAICallsPerMonth };
+}
+
+/** Boleh pakai AI platform kalau masih ada sisa kuota plan. */
+export async function canUsePlatformAI(userId: string | undefined): Promise<boolean> {
+  if (!userId) return true;
+  const { used, limit } = await platformAIUsage(userId);
+  return limit === null || used < limit;
 }

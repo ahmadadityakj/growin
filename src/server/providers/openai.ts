@@ -45,7 +45,7 @@ export async function getAIConfig(userId?: string): Promise<AIConfig | null> {
   if (userId) {
     try {
       const { IntegrationService } = await import("../services/integration-service");
-      const creds = await IntegrationService.getCredentials("openai", userId);
+      const creds = await IntegrationService.getActiveCredentials("openai", userId);
       if (creds.apiKey) {
         return {
           client: clientFor(creds.apiKey),
@@ -69,6 +69,74 @@ export async function getAIConfig(userId?: string): Promise<AIConfig | null> {
 
 export async function hasAI(userId?: string): Promise<boolean> {
   return (await getAIConfig(userId)) !== null;
+}
+
+function platformConfig(): AIConfig | null {
+  if (!env.OPENAI_API_KEY) return null;
+  return {
+    client: getOpenAI(),
+    modelExtraction: env.OPENAI_MODEL_EXTRACTION,
+    modelGeneration: env.OPENAI_MODEL_GENERATION,
+    source: "platform",
+  };
+}
+
+/** Error yang berarti "sumber daya provider habis/invalid" — layak fallback ke platform. */
+export function isProviderQuotaError(e: unknown): boolean {
+  const status = (e as { status?: number })?.status;
+  const code = (e as { code?: string; error?: { code?: string } })?.code
+    ?? (e as { error?: { code?: string } })?.error?.code;
+  if (status === 401 || status === 403 || status === 429) return true;
+  return Boolean(code && /quota|rate_limit|insufficient|billing|invalid_api_key|authentication/i.test(code));
+}
+
+export interface AIResult<T> {
+  value: T;
+  source: "workspace" | "platform";
+  /** Alasan fallback ke platform, kalau terjadi. */
+  fallbackReason?: string;
+}
+
+/**
+ * Jalankan operasi AI: coba key workspace (BYOK) dulu.
+ * Kalau provider user error (kuota/auth/rate limit) dan kuota platform plan masih ada,
+ * fallback ke AI bawaan platform — tercatat di integrations.config.lastError/lastFallbackAt.
+ */
+export async function withAI<T>(
+  userId: string | undefined,
+  fn: (ai: AIConfig) => Promise<T>
+): Promise<AIResult<T>> {
+  const config = await getAIConfig(userId);
+  if (!config) throw new Error("AI belum dikonfigurasi (platform & workspace sama-sama kosong)");
+
+  if (config.source === "platform") {
+    return { value: await fn(config), source: "platform" };
+  }
+
+  try {
+    return { value: await fn(config), source: "workspace" };
+  } catch (e) {
+    if (!isProviderQuotaError(e)) throw e;
+    const reason = e instanceof Error ? e.message : String(e);
+
+    const { canUsePlatformAI } = await import("@/lib/billing");
+    const platform = platformConfig();
+    if (!platform || !(await canUsePlatformAI(userId))) {
+      throw new Error(
+        `AI provider Anda error (${reason.slice(0, 160)}) dan kuota AI platform sudah habis. Perbaiki API key Anda atau upgrade plan.`
+      );
+    }
+
+    // catat di row integrasi supaya terlihat di UI
+    try {
+      const { IntegrationService } = await import("../services/integration-service");
+      await IntegrationService.recordRuntimeError("openai", reason, userId, { fellBack: true });
+    } catch {
+      // pencatatan gagal — jangan blokir fallback
+    }
+
+    return { value: await fn(platform), source: "platform", fallbackReason: reason.slice(0, 160) };
+  }
 }
 
 /** Extract JSON object/array dari output teks model (toleran terhadap markdown fence) */

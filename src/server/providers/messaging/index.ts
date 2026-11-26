@@ -14,7 +14,7 @@ export async function getMessagingProvider(channel: "email" | "whatsapp", ownerI
 
   if (channel === "email") {
     const { ResendProvider } = await import("./resend");
-    const creds = await IntegrationService.getCredentials("resend", ownerId);
+    const creds = await IntegrationService.getActiveCredentials("resend", ownerId);
     const apiKey = creds.apiKey;
     const from = creds.fromEmail || "Growin <onboarding@resend.dev>";
     if (!apiKey) {
@@ -23,17 +23,24 @@ export async function getMessagingProvider(channel: "email" | "whatsapp", ownerI
     return new ResendProvider(apiKey, from);
   }
 
-  const fonnte = await IntegrationService.getCredentials("fonnte", ownerId);
-  if (fonnte.token) {
+  const chosen = await IntegrationService.getSlotCredentials("whatsapp", ownerId);
+  if (chosen?.provider === "fonnte") {
+    if (!chosen.creds.token) {
+      throw new Error("Fonnte dipilih sebagai provider WhatsApp tapi token belum diisi. Lengkapi di Integrations.");
+    }
     const { FonnteProvider } = await import("./fonnte");
-    return new FonnteProvider(fonnte.token);
+    return new FonnteProvider(chosen.creds.token);
   }
-  const wab = await IntegrationService.getCredentials("whatsapp_business", ownerId);
-  if (wab.accessToken && wab.phoneNumberId) {
+  if (chosen?.provider === "whatsapp_business") {
+    if (!chosen.creds.accessToken || !chosen.creds.phoneNumberId) {
+      throw new Error(
+        "WhatsApp Business dipilih sebagai provider tapi access token / phone number ID belum diisi. Lengkapi di Integrations."
+      );
+    }
     const { WhatsAppBusinessProvider } = await import("./whatsapp-business");
-    return new WhatsAppBusinessProvider(wab.accessToken, wab.phoneNumberId);
+    return new WhatsAppBusinessProvider(chosen.creds.accessToken, chosen.creds.phoneNumberId);
   }
   throw new Error(
-    "Belum ada provider WhatsApp terkonfigurasi. Isi Fonnte atau WhatsApp Business API di Integrations."
+    "Belum ada provider WhatsApp aktif. Pilih Fonnte atau WhatsApp Business API di Integrations."
   );
 }

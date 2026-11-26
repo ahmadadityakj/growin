@@ -43,6 +43,13 @@
       "when": 1795652995825,
       "tag": "0005_team-workspaces",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795657660906,
+      "tag": "0006_ai-source",
+      "breakpoints": true
     }
   ]
 }
