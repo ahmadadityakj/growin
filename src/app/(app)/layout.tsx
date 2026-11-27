@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { ThemeProvider } from "next-themes";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
@@ -31,7 +32,8 @@ export default async function AppLayout({
   if (billing.expired) return <TrialExpired />;
 
   return (
-    <SidebarProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <SidebarProvider>
       <AppSidebar
         isOwner={scope === session.user.id}
         isAdmin={isPlatformAdmin(session.user.email)}
@@ -44,6 +46,7 @@ export default async function AppLayout({
         )}
         <main className="flex-1 overflow-auto bg-muted/40 p-4 md:p-6 lg:p-8">{children}</main>
       </SidebarInset>
-    </SidebarProvider>
+      </SidebarProvider>
+    </ThemeProvider>
   );
 }
