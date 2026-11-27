@@ -31,9 +31,9 @@ export default async function DashboardPage() {
   const uid = session!.user.id;
   const scopeId = await TeamService.resolveScope(uid);
   const teamIds = await TeamService.teamIdsOf(uid);
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
   const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
   const endOfToday = new Date(now); endOfToday.setHours(23, 59, 59, 999);
 
   const [

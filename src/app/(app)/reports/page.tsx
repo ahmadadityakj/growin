@@ -153,7 +153,7 @@ export default async function ReportsPage() {
           <CardHeader>
             <CardTitle className="text-base">Revenue per Sumber Leads</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Sumber mana yang paling banyak jadi deal — jawaban atas "channel mana yang worth it".
+              Sumber mana yang paling banyak jadi deal — jawaban atas &ldquo;channel mana yang worth it&rdquo;.
             </p>
           </CardHeader>
           <CardContent>

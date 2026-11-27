@@ -67,7 +67,7 @@ export default async function InboxPage({
     meta: string;
     failed?: boolean;
   }[] = [];
-  let channels: Channel[] = [];
+  const channels: Channel[] = [];
   let defaultChannel: Channel = "whatsapp";
 
   if (selected) {

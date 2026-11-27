@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,7 +55,7 @@ export function ImportForm() {
                 {result.errors.map((e, i) => <li key={i}>{e}</li>)}
               </ul>
             )}
-            <Button size="sm" className="mt-3" render={<a href="/leads">Lihat Leads</a>} />
+            <Button size="sm" className="mt-3" render={<Link href="/leads">Lihat Leads</Link>} />
           </div>
         )}
       </CardContent>
