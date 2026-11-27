@@ -1,6 +1,8 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { LogOut, User } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +25,8 @@ export function AppHeader({
   userName?: string | null;
   userEmail?: string | null;
 }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const initials = (userName ?? userEmail ?? "U")
     .split(/[\s@]/)
     .filter(Boolean)
@@ -57,9 +61,19 @@ export function AppHeader({
             <div className="text-xs text-muted-foreground">{userEmail}</div>
           </div>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
+          <DropdownMenuItem
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => {
+                // redirect: false + router nav — lebih cepat dari hard reload
+                await signOut({ redirect: false });
+                router.replace("/login");
+                router.refresh();
+              })
+            }
+          >
             <LogOut className="mr-2 h-4 w-4" />
-            {t.common.logout}
+            {pending ? "Keluar..." : t.common.logout}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
